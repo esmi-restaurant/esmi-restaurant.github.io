@@ -691,12 +691,12 @@ function enter(k,c){SEC=k;MENU=SECTIONS[k].menu;document.body.classList.add('in'
  show(c||0)}
 function renderTabs(){tabs.innerHTML=MENU.map((c,i)=>`<button class="tab ${i===cur?'on':''}" onclick="show(${i})"><div class="ti">${c.img?`<img src="${c.img}">`:c.icon}</div><span>${c.name}</span></button>`).join('')}
 function show(i){cur=i;renderTabs();const c=MENU[i];
- main.innerHTML=`<div class="banner">${pic(c.img,c.icon)}<div class="cap"><h2>${c.name}</h2><small>${c.items.length?c.items.length.toLocaleString("fa-IR")+' آیتم':'به‌زودی'}</small></div></div>`+
+ main.innerHTML=`<div class="banner">${pic(c.img,c.icon)}<div class="cap"><h2>${c.name}</h2>${c.items.length?'':'<small>به‌زودی</small>'}</div></div>`+
  (c.note?`<div class="note">${c.note}</div>`:'')+
  (c.items.length?`<div class="grid">`+c.items.map((it,j)=>`<button class="item" onclick="openItem(${i},${j})"><div class="thumb">${pic(it.img,c.icon)}</div><div class="info"><h3>${it.name}</h3>${it.desc?`<p>${it.desc}</p>`:''}${it.price?`<div class="price">${it.price} تومان</div>`:''}</div></button>`).join('')+`</div>`:`<div class="empty"><div>${c.icon}</div>آیتم‌های این بخش به‌زودی اضافه می‌شود.</div>`);
  tabs.children[i].scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});window.scrollTo({top:0,behavior:'smooth'})}
 function openItem(i,j){const c=MENU[i],it=MENU[i].items[j];
- sheet.innerHTML=`<button class="close" onclick="closeM()">×</button><div class="big">${pic(it.img,c.icon)}</div><div class="body"><span class="tag">${c.name}</span><h3>${it.name}</h3><p>${it.desc||'توضیحات این غذا به‌زودی اضافه می‌شود.'}</p>${it.price?`<div class="price" style="font-size:17px;margin-top:12px">${it.price} تومان</div>`:''}</div>`;
+ sheet.innerHTML=`<button class="close" onclick="closeM()">×</button><div class="big">${pic(it.img,c.icon)}</div><div class="body"><span class="tag">${c.name}</span><h3>${it.name}</h3>${it.desc?`<p>${it.desc}</p>`:''}${it.price?`<div class="price" style="font-size:17px;margin-top:12px">${it.price} تومان</div>`:''}</div>`;
  modal.classList.add('open');document.body.style.overflow='hidden'}
 function closeM(){modal.classList.remove('open');document.body.style.overflow=''}
 modal.addEventListener('click',e=>{if(e.target===modal)closeM()});

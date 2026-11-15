@@ -211,6 +211,10 @@ html.printing #printArea{
   font-family:Vazirmatn,Tahoma,sans-serif;font-size:11pt;line-height:1.35;
 }
 html.printing #printArea *,html.printing #printArea{background:#fff!important;color:#000!important;box-shadow:none!important;border-color:#000!important}
+html.printing #printArea .receipt-inner table.meta th,
+html.printing #printArea .receipt-inner table.meta td,
+html.printing #printArea .receipt-inner table.items th,
+html.printing #printArea .receipt-inner table.items td{border:1px solid #000!important}
 @media print{
   @page{size:var(--rcpt-page,80mm) auto;margin:0}
   @page :first{margin:0}
@@ -229,6 +233,10 @@ html.printing #printArea *,html.printing #printArea{background:#fff!important;co
     font-family:Vazirmatn,Tahoma,sans-serif;font-size:11pt;line-height:1.35;
   }
   #printArea *,#printArea{background:#fff!important;color:#000!important;box-shadow:none!important;border-color:#000!important}
+  #printArea .receipt-inner table.meta th,
+  #printArea .receipt-inner table.meta td,
+  #printArea .receipt-inner table.items th,
+  #printArea .receipt-inner table.items td{border:1px solid #000!important}
 }
 #printArea.receipt-preview{
   display:block;position:relative;width:var(--rcpt-content,72mm);margin:16px auto;padding:2mm 1mm 3mm;
@@ -236,12 +244,24 @@ html.printing #printArea *,html.printing #printArea{background:#fff!important;co
   font-family:Vazirmatn,Tahoma,sans-serif;font-size:11pt;line-height:1.35;
   box-shadow:0 0 0 1px #ddd;
 }
-.receipt-inner{color:#000;background:#fff;font-size:11pt;font-family:Vazirmatn,Tahoma,sans-serif;width:100%;max-width:100%;overflow:hidden;box-sizing:border-box}
-.receipt-inner h1{margin:0 0 2px;text-align:center;font-family:Vazirmatn,Tahoma,sans-serif;font-size:14pt;font-weight:800;color:#000}
+.receipt-inner{color:#000;background:#fff;font-size:10pt;font-family:Vazirmatn,Tahoma,sans-serif;width:100%;max-width:100%;overflow:hidden;box-sizing:border-box}
+.receipt-inner h1{margin:0 0 1px;text-align:center;font-family:Vazirmatn,Tahoma,sans-serif;font-size:13pt;font-weight:800;color:#000}
 .receipt-inner .c{text-align:center}
-.receipt-inner hr{border:0;border-top:1px dashed #000;margin:6px 0;width:100%}
-.receipt-inner table{width:100%;max-width:100%;border-collapse:collapse;table-layout:fixed;box-sizing:border-box}
-.receipt-inner th,.receipt-inner td{padding:2px 2px;text-align:right;vertical-align:top;font-size:10pt;color:#000;background:#fff;word-wrap:break-word;overflow-wrap:anywhere}
+.receipt-inner .sub{font-size:9pt;margin:0 0 2.5mm;color:#000}
+.receipt-inner .thanks{margin-top:2mm;font-size:9pt;color:#000}
+.receipt-inner hr{border:0;border-top:1px solid #000;margin:3px 0;width:100%}
+.receipt-inner table{width:100%;max-width:100%;border-collapse:collapse;table-layout:fixed;box-sizing:border-box;border:1px solid #000}
+.receipt-inner th,.receipt-inner td{padding:2px 3px;text-align:right;vertical-align:middle;font-size:8.5pt;color:#000;background:#fff;word-wrap:break-word;overflow-wrap:anywhere;border:1px solid #000}
+.receipt-inner table.meta{margin:0 0 2.5mm}
+.receipt-inner table.meta th{width:34%;font-weight:700;font-size:8pt;white-space:nowrap}
+.receipt-inner table.meta td{font-size:8.5pt}
+.receipt-inner table.items{margin:0}
+.receipt-inner table.items th{font-weight:800;font-size:7.5pt;text-align:center;padding:2px 1px}
+.receipt-inner table.items col.col-row,.receipt-inner table.items .col-row{width:9%;text-align:center;font-size:8pt;white-space:nowrap}
+.receipt-inner table.items col.col-name,.receipt-inner table.items .col-name{width:37%;text-align:right}
+.receipt-inner table.items col.col-qty,.receipt-inner table.items .col-qty{width:12%;text-align:center;white-space:nowrap;font-size:8pt}
+.receipt-inner table.items col.col-num,.receipt-inner table.items .col-num{width:21%;text-align:center;font-size:8pt}
+.receipt-inner table.items .tot-row td{font-weight:800;font-size:9pt;text-align:right}
 .print-nudge{margin-top:14px;padding:10px 12px;background:#141414;border:1px solid #2c2c2c;border-radius:14px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .print-nudge .lbl{flex:1 1 100%;font-size:12px;color:#b5b5b5}
 .print-nudge .row{display:flex;align-items:center;gap:8px}
@@ -258,14 +278,13 @@ html.printing #printArea *,html.printing #printArea{background:#fff!important;co
 .pdf-prompt .btn-row{display:flex;flex-wrap:wrap;gap:8px}
 .pdf-prompt button{border:1px solid #3a3a3a;background:#2a2a2a;color:#eee;border-radius:12px;font:inherit;font-size:13px;font-weight:600;padding:10px 14px;cursor:pointer}
 .pdf-prompt button.primary{background:#e6e6e6;color:#111;border-color:#e6e6e6}
-#pdfCapture{position:fixed;left:-10000px;top:0;width:72mm;background:#fff;color:#000;opacity:1;display:block;visibility:visible;z-index:1;box-sizing:border-box;padding:0;pointer-events:none}
+#pdfCapture{position:fixed;left:-10000px;top:0;width:80mm;background:#fff;color:#000;opacity:1;display:block;visibility:visible;z-index:1;box-sizing:border-box;padding:0;pointer-events:none}
 #pdfCapture,#pdfCapture *{background:#fff!important;color:#000!important;border-color:#000!important;box-shadow:none!important}
 #pdfCapture .receipt-inner{width:72mm;max-width:72mm;margin:0 auto;padding:2mm 1mm 3mm;box-sizing:border-box}
-.receipt-inner th:nth-child(1),.receipt-inner td:nth-child(1){width:44%}
-.receipt-inner th:nth-child(2),.receipt-inner td:nth-child(2){width:14%;white-space:nowrap}
-.receipt-inner th:nth-child(3),.receipt-inner td:nth-child(3){width:21%;white-space:nowrap}
-.receipt-inner th:nth-child(4),.receipt-inner td:nth-child(4){width:21%;white-space:nowrap}
-.receipt-inner .tot{font-weight:800;font-size:13pt;margin-top:4px;color:#000}
+#pdfCapture .receipt-inner table.meta th,
+#pdfCapture .receipt-inner table.meta td,
+#pdfCapture .receipt-inner table.items th,
+#pdfCapture .receipt-inner table.items td{border:1px solid #000!important}
 .receipt-inner bdi{unicode-bidi:isolate;direction:ltr}
 
 </style>
@@ -892,7 +911,7 @@ function fillInvoiceSheet(ws, inv, items){
   s.font=excelFont({size:12});
   s.alignment={horizontal:'center', vertical:'middle', readingOrder:2};
   ws.getRow(2).height=22;
-  const meta=[[3,'شماره فاکتور', String(inv.invoice_no||'')],[4,'تاریخ', inv.jalali||''],[5,'شماره میز', inv.table_no?String(inv.table_no):'']];
+  const meta=[[3,'شماره فاکتور', String(inv.invoice_no||'')],[4,'تاریخ', inv.jalali||''],[5,'شماره میز', inv.table_no?String(inv.table_no):'—']];
   meta.forEach(([r,label,val])=>{
     ws.mergeCells(`B${r}:D${r}`);
     const a=ws.getCell(`A${r}`); a.value=label; a.font=excelFont({bold:true}); a.alignment={horizontal:'right',vertical:'middle',readingOrder:2};
@@ -962,7 +981,7 @@ function fillReportSheets(wb, rep){
     row.height=RECEIPT.excel.rowPt;
     const no=row.getCell(1); no.value=String(inv.invoice_no||''); styleTableCell(no,{align:'left'}); no.alignment={horizontal:'left',vertical:'middle',readingOrder:1};
     const dt=row.getCell(2); dt.value=inv.jalali||''; styleTableCell(dt,{align:'right', wrap:true});
-    const tb=row.getCell(3); tb.value=inv.table_no?String(inv.table_no):''; styleTableCell(tb,{align:'center'});
+    const tb=row.getCell(3); tb.value=inv.table_no?String(inv.table_no):'—'; styleTableCell(tb,{align:'center'});
     const tot=row.getCell(4); tot.value=Number(inv.total)||0; styleTableCell(tot,{align:'right', num:true});
     const st=row.getCell(5); st.value=inv.status||''; styleTableCell(st,{align:'center'});
     r++;
@@ -1138,8 +1157,8 @@ const PDF_PROMPT_FAILED='مرورگر اجازهٔ انتخاب پوشه را ن
 let pdfPromptCtx={inv:null, items:null};
 function invoicePdfFilename(inv){
   const no=toEn(String(inv.invoice_no||'invoice')).replace(/[^\w.\-]+/g,'_');
-  const table=toEn(String(inv.table_no||'')).replace(/[^\w.\-]+/g,'')||'0';
-  return no+'_میز'+table+'.pdf';
+  const table=toEn(String(inv.table_no||'')).replace(/[^\w.\-]+/g,'');
+  return table? no+'_میز'+table+'.pdf' : no+'.pdf';
 }
 function invoicePdfSubfolder(inv){
   const ymd=inv && inv.jalali_ymd ? String(inv.jalali_ymd) : (jalaliParts().ymd||'');
@@ -1351,7 +1370,7 @@ function preparePdfCaptureEl(inv, items){
   let cap=document.getElementById('pdfCapture');
   if(!cap){ cap=document.createElement('div'); cap.id='pdfCapture'; document.body.appendChild(cap); }
   cap.innerHTML=receiptHTML(inv, items);
-  cap.style.cssText='position:fixed;left:-10000px;top:0;width:72mm;background:#fff;color:#000;opacity:1;display:block;visibility:visible;z-index:1;pointer-events:none;box-sizing:border-box;';
+  cap.style.cssText='position:fixed;left:-10000px;top:0;width:80mm;background:#fff;color:#000;opacity:1;display:block;visibility:visible;z-index:1;pointer-events:none;box-sizing:border-box;';
   return cap;
 }
 async function waitFrames(n){
@@ -1386,7 +1405,7 @@ async function captureReceiptCanvas(html2canvas, cap){
       node.style.background='#ffffff';
       node.style.color='#000000';
       node.style.zIndex='1';
-      node.style.width='72mm';
+      node.style.width='80mm';
       node.querySelectorAll('*').forEach(n=>{
         n.style.backgroundColor='#ffffff';
         n.style.color='#000000';
@@ -1742,22 +1761,46 @@ async function currentView(){
   return {inv, items, saved:false};
 }
 function receiptHTML(inv, items, report){
-  const rows=items.map(it=>`<tr><td>${it.name}${it.has_price===false||(!it.unit_price&&!it.has_price)?' <small>بدون قیمت</small>':''}</td><td>${toFa(it.qty)}</td><td>${it.unit_price?fmtPrice(it.unit_price):'—'}</td><td>${fmtPrice(it.line_total)}</td></tr>`).join('');
+  const rows=(items||[]).map((it,i)=>{
+    const noPrice=it.has_price===false||(!it.unit_price&&!it.has_price);
+    const name=(it.name||'')+(noPrice?' <small>بدون قیمت</small>':'');
+    return `<tr>
+      <td class="col-row">${toFa(i+1)}</td>
+      <td class="col-name">${name}</td>
+      <td class="col-qty">${toFa(it.qty)}</td>
+      <td class="col-num">${it.unit_price?fmtPrice(it.unit_price):'—'}</td>
+      <td class="col-num">${fmtPrice(it.line_total)}</td>
+    </tr>`;
+  }).join('');
   return `<div class="receipt-inner">
     <h1>رستوران اسمی</h1>
-    <div class="c">فاکتور فروش</div>
-    <hr>
-    <div>شماره فاکتور: <bdi dir="ltr" style="unicode-bidi:isolate;direction:ltr">${toFa(inv.invoice_no)}</bdi></div>
-    <div>تاریخ: ${inv.jalali||''}</div>
-    <div>شماره میز: ${inv.table_no?toFa(inv.table_no):'—'}</div>
-    <hr>
-    <table>
-      <thead><tr><th>نام</th><th>تعداد</th><th>فی</th><th>جمع</th></tr></thead>
-      <tbody>${rows}</tbody>
+    <div class="c sub">فاکتور فروش</div>
+    <table class="meta">
+      <tbody>
+        <tr><th>شماره فاکتور</th><td><bdi dir="ltr">${toFa(inv.invoice_no)}</bdi></td></tr>
+        <tr><th>تاریخ</th><td>${inv.jalali||'—'}</td></tr>
+        ${inv.table_no?`<tr><th>شماره میز</th><td>${toFa(inv.table_no)}</td></tr>`:''}
+      </tbody>
     </table>
-    <hr>
-    <div class="tot">جمع کل: ${fmtPrice(inv.total)} تومان</div>
-    <div class="c" style="margin-top:6px">نوش جان</div>
+    <table class="items">
+      <colgroup>
+        <col class="col-row"><col class="col-name"><col class="col-qty"><col class="col-num"><col class="col-num">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>ردیف</th>
+          <th>نام آیتم</th>
+          <th>تعداد</th>
+          <th>فی</th>
+          <th>جمع</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+        <tr class="tot-row"><td colspan="5">جمع کل: ${fmtPrice(inv.total)} تومان</td></tr>
+      </tbody>
+    </table>
+    <div class="c thanks">نوش جان</div>
   </div>`;
 }
 
@@ -1886,11 +1929,10 @@ async function renderInvoice(){
     <div class="meta-grid">
       <div class="field"><span>شماره فاکتور</span><b><bdi dir="ltr" style="unicode-bidi:isolate;direction:ltr">${toFa(inv.invoice_no)}</bdi>${saved?'':' <small style="color:#8f8f8f;font-weight:400">(پس از ثبت)</small>'}</b></div>
       <div class="field"><span>تاریخ</span><b>${inv.jalali}</b></div>
-      <div class="field full" id="tableField"><span>شماره میز ${editable?'(الزامی)':''}</span>
+      <div class="field full" id="tableField"><span>شماره میز ${editable?'(اختیاری)':''}</span>
         ${editable?`<input id="tableNo" inputmode="numeric" placeholder="مثلاً ۵" value="${tableVal.replace(/"/g,'')}" oninput="onTableInput(this)">`:`<b>${inv.table_no?toFa(inv.table_no):'—'}</b>`}
       </div>
     </div>
-    <p class="field-err" id="tableErr" hidden>شماره میز را وارد کنید</p>
     ${editable?`<div class="inv-search" id="invSearchWrap">
       <input id="invSearch" type="search" placeholder="جستجوی آیتم…" autocomplete="off" enterkeyhint="search" oninput="onInvSearch(this)">
       <div id="invSearchResults" class="inv-search-results" hidden></div>
@@ -1910,8 +1952,9 @@ function onTableInput(el){
   const c=loadCart();
   c.table=el.value;
   saveCart(c);
-  document.getElementById('tableErr').hidden=true;
-  document.getElementById('tableField').classList.remove('bad');
+  const err=document.getElementById('tableErr');
+  if(err) err.hidden=true;
+  document.getElementById('tableField')?.classList.remove('bad');
 }
 async function renderHistory(){
   const el=document.getElementById('invHist'); if(!el) return;
@@ -1938,13 +1981,6 @@ function clearCartAsk(){
 }
 async function submitInvoice(){
   const table=(document.getElementById('tableNo')?.value||loadCart().table||'').trim();
-  if(!table){
-    const err=document.getElementById('tableErr');
-    if(err) err.hidden=false;
-    document.getElementById('tableField')?.classList.add('bad');
-    document.getElementById('tableNo')?.focus();
-    return;
-  }
   const lines=cartLines();
   if(!lines.length){toast('آیتمی برای ثبت انتخاب نشده است'); return;}
   const btn=document.getElementById('btnSaveInv');
@@ -2003,7 +2039,7 @@ function invoiceSheetRows(inv, items){
     ['رستوران اسمی'],
     ['شماره فاکتور', inv.invoice_no],
     ['تاریخ', inv.jalali||''],
-    ['شماره میز', inv.table_no||''],
+    ['شماره میز', inv.table_no||'—'],
     [],
     ['نام','تعداد','فی','جمع']
   ];
@@ -2098,7 +2134,8 @@ async function filteredInvoices(){
     const ymd=inv.jalali_ymd||'';
     if(ymd && (ymd<from || ymd>to)) return false;
     if(!ymd) return true;
-    if(table && String(inv.table_no)!==table && toEn(String(inv.table_no))!==toEn(table)) return false;
+    const invTable=(inv.table_no==null||inv.table_no==='')?'':String(inv.table_no);
+    if(table && invTable!==table && toEn(invTable)!==toEn(table)) return false;
     return true;
   });
 }
@@ -2214,7 +2251,7 @@ async function backupJSON(){
 async function backupExcel(){
   const data=await exportAllData();
   const invRows=[['شماره فاکتور','تاریخ ثبت','تاریخ شمسی','تاریخ شمسی (عددی)','شماره میز','جمع','وضعیت']];
-  data.invoices.forEach(inv=>invRows.push([inv.invoice_no, inv.created_at, inv.jalali||'', inv.jalali_ymd||'', inv.table_no||'', inv.total, inv.status||'']));
+  data.invoices.forEach(inv=>invRows.push([inv.invoice_no, inv.created_at, inv.jalali||'', inv.jalali_ymd||'', inv.table_no||'—', inv.total, inv.status||'']));
   const itemRows=[['شماره فاکتور','شناسه آیتم','نام آیتم','تعداد','قیمت واحد','جمع']];
   data.invoice_items.forEach(it=>itemRows.push([it.invoice_no, it.item_id||'', it.name, it.qty, it.unit_price, it.line_total]));
   const menuRows=[['شناسه','بخش','دسته','نام','قیمت','فعال']];
@@ -2354,7 +2391,7 @@ window.__esmiSaveInvoiceAt=async function(iso, table, pairs){
     const unit=ref.has_price?ref.price:0;
     return {...ref, qty, unit, line:unit*qty};
   });
-  const inv={invoice_no:no, created_at:when.toISOString(), jalali:faDateTime(when), jalali_ymd:p.ymd, table_no:String(table), total:lines.reduce((s,l)=>s+l.line,0), status:'registered'};
+  const inv={invoice_no:no, created_at:when.toISOString(), jalali:faDateTime(when), jalali_ymd:p.ymd, table_no:(table==null||table==='')?'':String(table), total:lines.reduce((s,l)=>s+l.line,0), status:'registered'};
   const items=lines.map(l=>({invoice_no:no, item_id:l.id, name:l.name, qty:l.qty, unit_price:l.unit, line_total:l.line, has_price:l.has_price}));
   await saveInvoiceRecord(inv, items);
   return inv;

@@ -250,8 +250,8 @@ body.admin nav{top:50px}
 #printArea,.receipt{display:none!important}
 /* Receipt printer: Avasys ARP-3250 / Gainscha GP-80250
    80mm page, 72mm content box centered (4mm gutter each side). Sizes from RECEIPT via CSS vars. */
-@page{size:var(--rcpt-page,80mm) auto;margin:0}
-@page :first{margin:0}
+@page{size:80mm auto;margin:0}
+@page :first{size:80mm auto;margin:0}
 html.printing,html.printing body{background:#fff!important;color:#000!important;margin:0!important;padding:0!important;width:var(--rcpt-page,80mm)!important;max-width:var(--rcpt-page,80mm)!important;min-height:0!important;height:auto!important;overflow:hidden!important}
 html.printing body>*:not(#printArea):not(#pdfCapture){display:none!important}
 html.printing #printArea{
@@ -272,8 +272,8 @@ html.printing #printArea .receipt-inner table.meta td,
 html.printing #printArea .receipt-inner table.items th,
 html.printing #printArea .receipt-inner table.items td{border:1px solid #000!important}
 @media print{
-  @page{size:var(--rcpt-page,80mm) auto;margin:0}
-  @page :first{margin:0}
+  @page{size:80mm auto;margin:0}
+  @page :first{size:80mm auto;margin:0}
   html,body{background:#fff!important;color:#000!important;margin:0!important;padding:0!important;width:var(--rcpt-page,80mm)!important;max-width:var(--rcpt-page,80mm)!important;min-height:0!important;height:auto!important;overflow:hidden!important}
   body>*:not(#printArea){display:none!important}
   #printArea{
@@ -294,6 +294,7 @@ html.printing #printArea .receipt-inner table.items td{border:1px solid #000!imp
   #printArea .receipt-inner table.items th,
   #printArea .receipt-inner table.items td{border:1px solid #000!important}
 }
+@media screen{ #printArea,.receipt,html.printing #printArea{display:none!important} html.measuring-receipt #printArea{display:block!important} }
 #printArea.receipt-preview{
   display:block;position:relative;width:var(--rcpt-content,72mm);margin:16px auto;padding:2mm 1mm 3mm;
   box-sizing:border-box;background:#fff;color:#000;
@@ -1829,6 +1830,7 @@ async function applyReceiptPageSize(){
   try{ if(document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
   const hadPrinting=document.documentElement.classList.contains('printing');
   document.documentElement.classList.add('printing');
+  document.documentElement.classList.add('measuring-receipt');
   applyReceiptVars();
   const contentMm=RECEIPT.contentWidthMm||72;
   const sidePad=RECEIPT.printPadSideMm!=null?RECEIPT.printPadSideMm:1;
@@ -1861,12 +1863,18 @@ async function applyReceiptPageSize(){
   }
   const box=pa.getBoundingClientRect();
   const extra=RECEIPT.measureExtraMm||1;
-  const heightMm=Math.max(Math.ceil(pxToMm(box.height)+extra), 40);
+  const pageW=RECEIPT.pageWidthMm||80;
+  // Chrome treats width>height as landscape and may drop the custom size / show headers.
+  const minPortraitMm=Math.max(90, pageW+10);
+  const heightMm=Math.max(Math.ceil(pxToMm(box.height)+extra), minPortraitMm);
   let s=document.getElementById('receiptPageStyle');
   if(!s){s=document.createElement('style'); s.id='receiptPageStyle'; document.head.appendChild(s);}
-  s.textContent='@page{size:'+(RECEIPT.pageWidthMm||80)+'mm '+heightMm+'mm;margin:0}@page :first{margin:0}';
+  const pageRule='@page{size:'+pageW+'mm '+heightMm+'mm;margin:0}@page :first{size:'+pageW+'mm '+heightMm+'mm;margin:0}';
+  s.textContent=pageRule+'@media print{'+pageRule+'}';
   pa.setAttribute('data-page-height-mm', String(heightMm));
+  pa.setAttribute('data-page-width-mm', String(pageW));
   pa.setAttribute('data-content-width-mm', String(contentMm));
+  document.documentElement.classList.remove('measuring-receipt');
   if(!hadPrinting){
     document.documentElement.classList.remove('printing');
     pa.removeAttribute('style');
@@ -1931,7 +1939,14 @@ function armPrintCleanup(){
       else if(_printMq.addListener) _printMq.addListener(_printMqFn);
     }
   }catch(e){}
-  _printCleanupTimer=setTimeout(finish, 2000);
+  // Do not clean up while the print dialog/preview is open. window.print() is
+  // often non-blocking on Windows Chrome; a short timer would strip styles mid-preview.
+  _printCleanupTimer=setTimeout(()=>{
+    let inPrint=false;
+    try{ inPrint=!!window.matchMedia('print').matches; }catch(e){}
+    if(inPrint) return;
+    finish();
+  }, 60000);
 }
 
 window.applyReceiptPageSize=applyReceiptPageSize;
@@ -2306,11 +2321,7 @@ async function printInvoice(){
   document.documentElement.classList.add('printing');
   await applyReceiptPageSize();
   armPrintCleanup();
-  try{ window.print(); }finally{
-    // print() may return before the dialog closes; @media print still shows #printArea.
-    // Drop html.printing and on-screen visibility immediately. afterprint/matchMedia/timeout also run.
-    endPrintMode();
-  }
+  window.print();
 }
 function invoiceSheetRows(inv, items){
   const rows=[
@@ -2486,7 +2497,7 @@ async function printReport(){
   document.documentElement.classList.add('printing');
   await applyReceiptPageSize();
   armPrintCleanup();
-  try{ window.print(); }finally{ endPrintMode(); }
+  window.print();
 }
 async function excelReport(){
   const r=window._lastReport; if(!r){toast('گزارشی برای خروجی نیست'); return;}

@@ -174,6 +174,62 @@ body.admin nav{top:50px}
 .inv-search-add:hover{background:#3a3a3a}
 .inv-search-qty{position:absolute;top:-6px;left:-6px;min-width:16px;height:16px;border-radius:99px;background:#e6e6e6;color:#111;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px}
 .inv-search-empty{padding:14px 12px;text-align:center;color:#8f8f8f;font-size:13px}
+.inv-no{white-space:nowrap}
+.inv-no-hint{color:#8f8f8f;font-weight:400}
+.rm-ico{display:none}
+.inv-lines{width:100%;min-width:0}
+.inv-lines-head,.inv-line{display:grid;grid-template-columns:minmax(0,1fr) 88px 96px 96px 52px;gap:4px 8px;align-items:center}
+.inv-lines-head{color:#8f8f8f;font-size:13px;font-weight:600;padding:8px 4px;border-bottom:1px solid #2c2c2c}
+.inv-line{padding:10px 4px;border-bottom:1px solid #242424;font-size:13px}
+.inv-line-name{min-width:0}
+.inv-line-unit,.inv-line-sum{white-space:nowrap}
+.inv-line .qty{margin-top:0}
+.inv-line-qtyval{display:inline-block;min-width:18px;text-align:center;font-weight:700}
+
+@media(max-width:380px){
+  #invBox .meta-grid{grid-template-columns:1fr}
+  #invBox .inv-no{font-size:13px}
+}
+
+@media(max-width:479px){
+  #invBox .btn-row.inv-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  #invBox .btn-row.inv-actions button{width:100%;min-height:44px}
+  #invBox .inv-lines-head{display:none}
+  #invBox .inv-lines{display:flex;flex-direction:column;gap:8px}
+  #invBox .inv-line{
+    display:grid;
+    grid-template-columns:auto 1fr auto 44px;
+    grid-template-areas:"name name name name" "qty unit sum rm";
+    gap:8px 6px;
+    padding:10px;
+    background:#141414;
+    border:1px solid #2c2c2c;
+    border-radius:12px;
+    border-bottom:1px solid #2c2c2c;
+    min-width:0;
+  }
+  #invBox .inv-line-name{grid-area:name;font-weight:700;font-size:14px;line-height:1.45;overflow-wrap:anywhere;word-break:break-word}
+  #invBox .inv-line-qty{grid-area:qty;align-self:center}
+  #invBox .inv-line-unit{grid-area:unit;font-size:12px;color:#cfcfcf;white-space:nowrap;align-self:center;text-align:center;min-width:0}
+  #invBox .inv-line-sum{grid-area:sum;font-size:13px;font-weight:700;white-space:nowrap;align-self:center}
+  #invBox .inv-line-rm{grid-area:rm}
+  #invBox .rm-txt{display:none}
+  #invBox .rm-ico{display:flex;align-items:center;justify-content:center}
+  #invBox .inv-line .rm{width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;padding:0;border-radius:11px;background:#2a2a2a;border:1px solid #4a4a4a;color:#ff8a80}
+}
+
+@media(max-width:767px){
+  .admin-bar{flex-wrap:nowrap;overflow:hidden}
+  .admin-bar button{min-height:44px;min-width:44px;padding:0 8px;font-size:12.5px;white-space:nowrap}
+  .panel .close{width:44px;height:44px;top:8px;left:8px}
+  .panel .qty button,.inv-search-add,.print-nudge button{width:44px;height:44px;min-width:44px;min-height:44px;border-radius:12px;padding:0}
+  .panel .qty{gap:6px}
+  .panel .qty span{min-width:20px}
+}
+@media(max-width:380px){
+  .admin-bar{gap:5px;padding:0 6px}
+  .admin-bar button{font-size:12px;padding:0 6px}
+}
 
 
 .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:end}
@@ -589,6 +645,26 @@ async function syncMenuItems(){
   });
 }
 
+function formatInvoiceNo(dayKey, n){
+  return dayKey+'-'+String(n).padStart(4,'0');
+}
+function parseInvoiceNo(no){
+  const m=String(no||'').match(/^(\d{6})-(\d+)$/);
+  if(!m) return null;
+  return {dayKey:m[1], n:parseInt(m[2],10)};
+}
+function highestSeqForDay(list, dayKey){
+  let max=0;
+  (list||[]).forEach(it=>{
+    const p=parseInvoiceNo(typeof it==='string'?it:(it&&it.invoice_no));
+    if(p && p.dayKey===dayKey && p.n>max) max=p.n;
+  });
+  return max;
+}
+function dayKeyFromDate(date){
+  const p=jalaliParts(date||new Date());
+  return p.yy+p.mm+p.dd;
+}
 async function getCounters(){
   if(useLS) return Object.assign({}, lsInit().meta.counters||{});
   const rec=await new Promise((res,rej)=>{
@@ -608,36 +684,162 @@ async function setCounters(byDay){
     tx.onerror=()=>rej(tx.error);
   });
 }
+function keysInDayRange(store, dayKey){
+  const range=IDBKeyRange.bound(dayKey+'-0000', dayKey+'-9999');
+  return new Promise((res,rej)=>{
+    const rq=store.getAllKeys(range);
+    rq.onsuccess=()=>res(rq.result||[]);
+    rq.onerror=()=>rej(rq.error);
+  });
+}
 async function peekNextNo(date){
-  const p=jalaliParts(date||new Date());
-  const dayKey=p.yy+p.mm+p.dd;
+  const dayKey=dayKeyFromDate(date);
   const c=await getCounters();
-  const n=(c[dayKey]||0)+1;
-  return dayKey+'-'+String(n).padStart(4,'0');
+  let existingMax=0;
+  if(useLS){
+    existingMax=highestSeqForDay(Object.keys(lsInit().invoices||{}), dayKey);
+  }else{
+    await dbOpen();
+    existingMax=highestSeqForDay(await new Promise((res,rej)=>{
+      const tx=idb.transaction('invoices','readonly');
+      keysInDayRange(tx.objectStore('invoices'), dayKey).then(res, rej);
+    }), dayKey);
+  }
+  const n=Math.max(c[dayKey]||0, existingMax)+1;
+  return formatInvoiceNo(dayKey, n);
+}
+function nextSeqFrom(counterVal, existingKeys, dayKey){
+  return Math.max(counterVal||0, highestSeqForDay(existingKeys, dayKey))+1;
+}
+function isConstraintError(e){
+  if(!e) return false;
+  return e.name==='ConstraintError' || /ConstraintError/i.test(String(e&&e.name||e));
+}
+async function saveNewInvoice(invBase, items, date){
+  await dbOpen();
+  const when=date||new Date();
+  const p=jalaliParts(when);
+  const dayKey=p.yy+p.mm+p.dd;
+  const MAX_TRIES=8;
+  if(useLS) return saveNewInvoiceLS(invBase, items, dayKey, when, p);
+  let lastErr=null;
+  for(let attempt=0; attempt<MAX_TRIES; attempt++){
+    try{
+      const saved=await new Promise((res,rej)=>{
+        const tx=idb.transaction(['meta','invoices','invoice_items'],'readwrite');
+        const metaSt=tx.objectStore('meta');
+        const invSt=tx.objectStore('invoices');
+        const itemSt=tx.objectStore('invoice_items');
+        let savedInv=null;
+        const range=IDBKeyRange.bound(dayKey+'-0000', dayKey+'-9999');
+        const keyRq=invSt.getAllKeys(range);
+        keyRq.onerror=()=>rej(keyRq.error);
+        keyRq.onsuccess=()=>{
+          const keys=keyRq.result||[];
+          const ctrRq=metaSt.get('counters');
+          ctrRq.onerror=()=>rej(ctrRq.error);
+          ctrRq.onsuccess=()=>{
+            const rec=ctrRq.result||{key:'counters', byDay:{}};
+            const byDay=Object.assign({}, rec.byDay||{});
+            const n=nextSeqFrom(byDay[dayKey], keys, dayKey);
+            const no=formatInvoiceNo(dayKey, n);
+            const inv=Object.assign({}, invBase, {invoice_no:no});
+            if(!inv.created_at) inv.created_at=when.toISOString();
+            if(!inv.jalali) inv.jalali=faDateTime(when);
+            if(!inv.jalali_ymd) inv.jalali_ymd=p.ymd;
+            if(inv.status==null) inv.status='registered';
+            const lined=(items||[]).map(it=>{
+              const x=Object.assign({}, it, {invoice_no:no});
+              delete x.id;
+              return x;
+            });
+            const addRq=invSt.add(inv);
+            addRq.onerror=()=>rej(addRq.error);
+            addRq.onsuccess=()=>{
+              lined.forEach(it=>itemSt.add(it));
+              byDay[dayKey]=n;
+              metaSt.put({key:'counters', byDay});
+              savedInv=inv;
+            };
+          };
+        };
+        tx.oncomplete=()=>res(savedInv);
+        tx.onerror=()=>rej(tx.error);
+        tx.onabort=()=>rej(tx.error||new Error('aborted'));
+      });
+      if(!saved || !saved.invoice_no) throw new Error('invoice-save-empty');
+      return saved;
+    }catch(e){
+      lastErr=e;
+      if(isConstraintError(e)) continue;
+      throw e;
+    }
+  }
+  const err=lastErr||new Error('invoice-number-collision');
+  err.code='invoice-number-collision';
+  throw err;
+}
+function saveNewInvoiceLS(invBase, items, dayKey, when, p){
+  const MAX_TRIES=8;
+  for(let attempt=0; attempt<MAX_TRIES; attempt++){
+    const d=lsInit();
+    d.invoices=d.invoices||{};
+    d.invoice_items=d.invoice_items||[];
+    d.meta=d.meta||{};
+    d.meta.counters=d.meta.counters||{};
+    const n=nextSeqFrom(d.meta.counters[dayKey], Object.keys(d.invoices), dayKey);
+    const no=formatInvoiceNo(dayKey, n);
+    if(d.invoices[no]){
+      d.meta.counters[dayKey]=n;
+      lsSave(d);
+      continue;
+    }
+    const inv=Object.assign({}, invBase, {invoice_no:no});
+    if(!inv.created_at) inv.created_at=(when||new Date()).toISOString();
+    if(!inv.jalali) inv.jalali=faDateTime(when||new Date());
+    if(!inv.jalali_ymd) inv.jalali_ymd=(p||jalaliParts(when||new Date())).ymd;
+    if(inv.status==null) inv.status='registered';
+    d.invoices[no]=inv;
+    (items||[]).forEach(it=>{
+      const x=Object.assign({}, it, {invoice_no:no});
+      delete x.id;
+      d.invoice_items.push(x);
+    });
+    d.meta.counters[dayKey]=n;
+    lsSave(d);
+    return inv;
+  }
+  const err=new Error('invoice-number-collision');
+  err.code='invoice-number-collision';
+  throw err;
 }
 async function allocNextNo(date){
-  const p=jalaliParts(date||new Date());
-  const dayKey=p.yy+p.mm+p.dd;
-  const c=await getCounters();
-  const n=(c[dayKey]||0)+1;
-  c[dayKey]=n;
-  await setCounters(c);
-  return dayKey+'-'+String(n).padStart(4,'0');
+  // Preview-safe: does not increment. New invoices go through saveNewInvoice.
+  return peekNextNo(date);
 }
 async function saveInvoiceRecord(inv, items){
+  // Kept for compatibility; unique numbers must go through saveNewInvoice.
+  if(!inv || !inv.invoice_no) return saveNewInvoice(inv||{}, items||[]);
+  await dbOpen();
   if(useLS){
     const d=lsInit();
+    if(d.invoices[inv.invoice_no]){
+      const e=new Error('ConstraintError'); e.name='ConstraintError'; throw e;
+    }
     d.invoices[inv.invoice_no]=inv;
-    items.forEach(it=>{d.invoice_items.push(it);});
+    (items||[]).forEach(it=>d.invoice_items.push(it));
     lsSave(d);
-    return;
+    return inv;
   }
-  await new Promise((res,rej)=>{
+  return await new Promise((res,rej)=>{
     const tx=idb.transaction(['invoices','invoice_items'],'readwrite');
-    tx.objectStore('invoices').put(inv);
-    const st=tx.objectStore('invoice_items');
-    items.forEach(it=>st.add(it));
-    tx.oncomplete=()=>res();
+    const addRq=tx.objectStore('invoices').add(inv);
+    addRq.onerror=()=>rej(addRq.error);
+    addRq.onsuccess=()=>{
+      const st=tx.objectStore('invoice_items');
+      (items||[]).forEach(it=>{ const x=Object.assign({},it); delete x.id; st.add(x); });
+    };
+    tx.oncomplete=()=>res(inv);
     tx.onerror=()=>rej(tx.error);
   });
 }
@@ -697,35 +899,113 @@ async function exportAllData(){
 }
 async function importAllData(data){
   if(!data || !Array.isArray(data.invoices) || !Array.isArray(data.invoice_items)) throw new Error('bad');
-  const incoming=data.meta && data.meta.counters || {};
-  const current=await getCounters();
-  const merged={...current};
-  Object.keys(incoming).forEach(k=>{
-    merged[k]=Math.max(current[k]||0, incoming[k]||0);
+  await dbOpen();
+  const report={imported:0, renamed:[], skipped:[]};
+  const incoming=data.invoices||[];
+  const incomingItems=data.invoice_items||[];
+  const incomingCtr=data.meta && data.meta.counters || {};
+
+  const existingNos=useLS
+    ? new Set(Object.keys(lsInit().invoices||{}))
+    : new Set(await new Promise((res,rej)=>{
+        const tx=idb.transaction('invoices','readonly');
+        const rq=tx.objectStore('invoices').getAllKeys();
+        rq.onsuccess=()=>res(rq.result||[]);
+        rq.onerror=()=>rej(rq.error);
+      }));
+  const used=new Set(existingNos);
+  const remap={};
+  incoming.forEach(inv=>{
+    const no=inv && inv.invoice_no;
+    if(!no){ report.skipped.push('(بدون شماره)'); return; }
+    if(!used.has(no)){
+      remap[no]=no;
+      used.add(no);
+      return;
+    }
+    const parsed=parseInvoiceNo(no);
+    let dayKey=parsed?parsed.dayKey:null;
+    if(!dayKey && inv.jalali_ymd){
+      const ymd=String(inv.jalali_ymd).replace(/-/g,'');
+      dayKey=ymd.length>=8?ymd.slice(2):ymd;
+    }
+    if(!dayKey) dayKey=dayKeyFromDate(inv.created_at?new Date(inv.created_at):new Date());
+    let n=highestSeqForDay(Array.from(used), dayKey)+1;
+    let neu=formatInvoiceNo(dayKey, n);
+    while(used.has(neu)){ n++; neu=formatInvoiceNo(dayKey, n); }
+    remap[no]=neu;
+    used.add(neu);
+    report.renamed.push({from:no, to:neu});
   });
+
+  const toWrite=incoming.filter(inv=>inv && inv.invoice_no && remap[inv.invoice_no]).map(inv=>{
+    const no=remap[inv.invoice_no];
+    const copy=Object.assign({}, inv, {invoice_no:no});
+    if(no!==inv.invoice_no) copy.imported_from=inv.invoice_no;
+    return copy;
+  });
+  const itemsWrite=incomingItems.map(it=>{
+    const x=Object.assign({}, it);
+    delete x.id;
+    if(!x.invoice_no) return null;
+    if(!remap[x.invoice_no]) return null;
+    x.invoice_no=remap[x.invoice_no];
+    return x;
+  }).filter(Boolean);
+
   if(useLS){
     const d=lsInit();
-    d.invoices={};
-    (data.invoices||[]).forEach(inv=>d.invoices[inv.invoice_no]=inv);
-    d.invoice_items=(data.invoice_items||[]).map(it=>{const x={...it}; delete x.id; return x;});
-    if(data.menu_items){d.menu_items={}; data.menu_items.forEach(it=>d.menu_items[it.id]=it);}
+    toWrite.forEach(inv=>{ d.invoices[inv.invoice_no]=inv; });
+    itemsWrite.forEach(it=>d.invoice_items.push(it));
+    if(data.menu_items){ data.menu_items.forEach(it=>{ if(it && it.id) d.menu_items[it.id]=it; }); }
+    const merged=Object.assign({}, d.meta.counters||{}, incomingCtr);
+    Object.keys(merged).forEach(k=>{
+      merged[k]=Math.max(d.meta.counters&&d.meta.counters[k]||0, incomingCtr[k]||0, highestSeqForDay(Object.keys(d.invoices), k));
+    });
+    Object.keys(d.invoices).forEach(no=>{
+      const parsed=parseInvoiceNo(no);
+      if(!parsed) return;
+      merged[parsed.dayKey]=Math.max(merged[parsed.dayKey]||0, parsed.n);
+    });
     d.meta.counters=merged;
     lsSave(d);
-    return;
+    report.imported=toWrite.length;
+    return report;
   }
+
   await new Promise((res,rej)=>{
-    const tx=idb.transaction(['invoices','invoice_items','meta'],'readwrite');
-    tx.objectStore('invoices').clear();
-    tx.objectStore('invoice_items').clear();
-    data.invoices.forEach(inv=>tx.objectStore('invoices').put(inv));
-    data.invoice_items.forEach(it=>{
-      const x={...it}; delete x.id;
-      tx.objectStore('invoice_items').add(x);
-    });
-    tx.objectStore('meta').put({key:'counters', byDay:merged});
+    const stores=['invoices','invoice_items','meta'];
+    if(data.menu_items && data.menu_items.length) stores.push('menu_items');
+    const tx=idb.transaction(stores,'readwrite');
+    const invSt=tx.objectStore('invoices');
+    toWrite.forEach(inv=>invSt.add(inv));
+    const itemSt=tx.objectStore('invoice_items');
+    itemsWrite.forEach(it=>itemSt.add(it));
+    if(data.menu_items && data.menu_items.length){
+      const ms=tx.objectStore('menu_items');
+      data.menu_items.forEach(it=>ms.put(it));
+    }
     tx.oncomplete=()=>res();
     tx.onerror=()=>rej(tx.error);
   });
+
+  const current=await getCounters();
+  const merged=Object.assign({}, current);
+  Object.keys(incomingCtr).forEach(k=>{ merged[k]=Math.max(current[k]||0, incomingCtr[k]||0); });
+  const allNos=await new Promise((res,rej)=>{
+    const tx=idb.transaction('invoices','readonly');
+    const rq=tx.objectStore('invoices').getAllKeys();
+    rq.onsuccess=()=>res(rq.result||[]);
+    rq.onerror=()=>rej(rq.error);
+  });
+  allNos.forEach(no=>{
+    const parsed=parseInvoiceNo(no);
+    if(!parsed) return;
+    merged[parsed.dayKey]=Math.max(merged[parsed.dayKey]||0, parsed.n);
+  });
+  await setCounters(merged);
+  report.imported=toWrite.length;
+  return report;
 }
 
 /* ---------- Cart ---------- */
@@ -1899,24 +2179,23 @@ async function renderInvoice(){
   const {inv, items, saved}=await currentView();
   const editable=!saved;
   const tableVal=editable?(loadCart().table||''):(inv.table_no||'');
-  const lines=items.map((it,idx)=>{
+  const rmIcon='<span class="rm-ico" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2zm-3 6h2v11H6V9zm4 0h2v11h-2V9zm4 0h2v11h-2V9z"/></svg></span>';
+  const lines=items.map((it)=>{
     const id=it.item_id;
-    const priceCell=it.has_price===false || (!it.unit_price && it.has_price!==true) ? '<span class="noprice">بدون قیمت</span>' : fmtPrice(it.unit_price);
-    // has_price might be undefined on old records; treat unit 0 and no flag as بدون قیمت only if unit is 0 and name known
     const noP=it.has_price===false || (it.has_price!==true && !it.unit_price);
     const priceShow=noP?'<span class="noprice">بدون قیمت</span>':fmtPrice(it.unit_price);
-    const qtyCtrl=editable&&id?qtyWidget(id,false):toFa(it.qty);
-    const rm=editable&&id?`<button type="button" class="rm" onclick="cartRemove('${id}')">حذف</button>`:'';
-    return `<tr><td>${it.name}</td><td>${qtyCtrl}</td><td class="num">${priceShow}</td><td class="num">${fmtPrice(it.line_total)}</td><td>${rm}</td></tr>`;
+    const qtyCtrl=editable&&id?qtyWidget(id,false):`<span class="inv-line-qtyval">${toFa(it.qty)}</span>`;
+    const rm=editable&&id?`<button type="button" class="rm" onclick="cartRemove('${id}')" aria-label="حذف"><span class="rm-txt">حذف</span>${rmIcon}</button>`:'';
+    return `<div class="inv-line"><div class="inv-line-name">${it.name}</div><div class="inv-line-qty">${qtyCtrl}</div><div class="inv-line-unit num">${priceShow}</div><div class="inv-line-sum num">${fmtPrice(it.line_total)}</div><div class="inv-line-rm">${rm}</div></div>`;
   }).join('');
   const empty=!items.length?`<div class="inv-empty">آیتمی انتخاب نشده است</div>`:
-    `<table class="inv-table"><thead><tr><th>نام آیتم</th><th>تعداد</th><th>قیمت واحد</th><th>جمع</th><th></th></tr></thead><tbody>${lines}</tbody></table>`;
+    `<div class="inv-lines"><div class="inv-lines-head"><span>نام آیتم</span><span>تعداد</span><span>قیمت واحد</span><span>جمع</span><span></span></div>${lines}</div>`;
   const btns=saved?`
-    <div class="btn-row">
+    <div class="btn-row inv-actions">
       <button type="button" onclick="printInvoice()">چاپ</button>
       <button type="button" onclick="excelInvoice()">خروجی اکسل</button>
     </div>`:`
-    <div class="btn-row">
+    <div class="btn-row inv-actions">
       <button type="button" class="primary" id="btnSaveInv" onclick="submitInvoice()">ثبت فاکتور</button>
       <button type="button" onclick="printInvoice()">چاپ</button>
       <button type="button" onclick="excelInvoice()">خروجی اکسل</button>
@@ -1927,7 +2206,7 @@ async function renderInvoice(){
     <h2>فاکتور</h2>
     <p class="sub">رستوران اسمی</p>
     <div class="meta-grid">
-      <div class="field"><span>شماره فاکتور</span><b><bdi dir="ltr" style="unicode-bidi:isolate;direction:ltr">${toFa(inv.invoice_no)}</bdi>${saved?'':' <small style="color:#8f8f8f;font-weight:400">(پس از ثبت)</small>'}</b></div>
+      <div class="field inv-no-field"><span>شماره فاکتور</span><b class="inv-no"><bdi dir="ltr" style="unicode-bidi:isolate;direction:ltr">${toFa(inv.invoice_no)}</bdi>${saved?'':' <small class="inv-no-hint">(پس از ثبت)</small>'}</b></div>
       <div class="field"><span>تاریخ</span><b>${inv.jalali}</b></div>
       <div class="field full" id="tableField"><span>شماره میز ${editable?'(اختیاری)':''}</span>
         ${editable?`<input id="tableNo" inputmode="numeric" placeholder="مثلاً ۵" value="${tableVal.replace(/"/g,'')}" oninput="onTableInput(this)">`:`<b>${inv.table_no?toFa(inv.table_no):'—'}</b>`}
@@ -1988,22 +2267,21 @@ async function submitInvoice(){
   try{
     await dbOpen();
     const now=new Date();
-    const p=jalaliParts(now);
-    const no=await allocNextNo(now);
-    const inv={
-      invoice_no:no,
+    const invBase={
       created_at:now.toISOString(),
       jalali:faDateTime(now),
-      jalali_ymd:p.ymd,
+      jalali_ymd:jalaliParts(now).ymd,
       table_no:table,
       total:lines.reduce((s,l)=>s+l.line,0),
       status:'registered'
     };
-    const items=lines.map(l=>({
-      invoice_no:no, item_id:l.id, name:l.name, qty:l.qty,
+    const itemBase=lines.map(l=>({
+      item_id:l.id, name:l.name, qty:l.qty,
       unit_price:l.unit, line_total:l.line, has_price:l.has_price
     }));
-    await saveInvoiceRecord(inv, items);
+    const inv=await saveNewInvoice(invBase, itemBase, now);
+    const no=inv.invoice_no;
+    const items=itemBase.map(it=>Object.assign({}, it, {invoice_no:no}));
     saveCart({items:{}, table:''});
     refreshQtyUI();
     lastSaved=inv;
@@ -2013,7 +2291,7 @@ async function submitInvoice(){
     saveInvoicePdfBackup(inv, items);
   }catch(e){
     console.error(e);
-    toast('ثبت فاکتور ناموفق بود');
+    toast((e&&e.code==='invoice-number-collision')?'شماره فاکتور تکراری شد؛ دوباره تلاش کنید':'ثبت فاکتور ناموفق بود');
     if(btn) btn.disabled=false;
   }
 }
@@ -2269,11 +2547,14 @@ async function importJSONFile(input){
   const f=input.files && input.files[0];
   input.value='';
   if(!f) return;
-  if(!confirm('بازیابی پشتیبان، فاکتورهای فعلی را جایگزین می‌کند. ادامه می‌دهید؟')) return;
+  if(!confirm('فاکتورهای پشتیبان به داده‌های فعلی اضافه می‌شوند. اگر شماره‌ای تکراری باشد، یک شماره جدید می‌گیرد و فاکتور فعلی بازنویسی نمی‌شود. ادامه می‌دهید؟')) return;
   try{
     const data=JSON.parse(await f.text());
-    await importAllData(data);
-    toast('پشتیبان بازیابی شد');
+    const report=await importAllData(data);
+    const parts=['پشتیبان بازیابی شد: '+toFa((report&&report.imported)||0)+' فاکتور'];
+    if(report&&report.renamed&&report.renamed.length) parts.push(toFa(report.renamed.length)+' شماره تکراری به شماره جدید تغییر کرد');
+    if(report&&report.skipped&&report.skipped.length) parts.push(toFa(report.skipped.length)+' مورد رد شد');
+    toast(parts.join('، '), 5000);
     closeBackup();
   }catch(e){
     console.error(e);
@@ -2385,18 +2666,20 @@ window.__esmiSaveInvoiceAt=async function(iso, table, pairs){
   await dbOpen(); await syncMenuItems();
   const when=new Date(iso);
   const p=jalaliParts(when);
-  const no=await allocNextNo(when);
   const lines=pairs.map(([id,qty])=>{
     const ref=itemRef(id);
     const unit=ref.has_price?ref.price:0;
     return {...ref, qty, unit, line:unit*qty};
   });
-  const inv={invoice_no:no, created_at:when.toISOString(), jalali:faDateTime(when), jalali_ymd:p.ymd, table_no:(table==null||table==='')?'':String(table), total:lines.reduce((s,l)=>s+l.line,0), status:'registered'};
-  const items=lines.map(l=>({invoice_no:no, item_id:l.id, name:l.name, qty:l.qty, unit_price:l.unit, line_total:l.line, has_price:l.has_price}));
-  await saveInvoiceRecord(inv, items);
-  return inv;
+  const invBase={created_at:when.toISOString(), jalali:faDateTime(when), jalali_ymd:p.ymd, table_no:(table==null||table==='')?'':String(table), total:lines.reduce((s,l)=>s+l.line,0), status:'registered'};
+  const items=lines.map(l=>({item_id:l.id, name:l.name, qty:l.qty, unit_price:l.unit, line_total:l.line, has_price:l.has_price}));
+  return await saveNewInvoice(invBase, items, when);
 };
-window.__esmiDB={dbOpen, syncMenuItems, listInvoices, exportAllData, peekNextNo, allocNextNo};
+window.__esmiDB={dbOpen, syncMenuItems, listInvoices, exportAllData, peekNextNo, allocNextNo, saveNewInvoice, importAllData, getCounters, setCounters, getInvoice, getInvoiceItems, parseInvoiceNo, formatInvoiceNo};
+window.saveNewInvoice=saveNewInvoice;
+window.importAllData=importAllData;
+window.parseInvoiceNo=parseInvoiceNo;
+window.__esmiSetUseLS=function(v){useLS=!!v; return useLS;};
 
 function bootAdmin(){
   applyReceiptVars();

@@ -191,7 +191,7 @@ body.admin nav{top:50px}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:220;background:#e6e6e6;color:#111;border-radius:14px;padding:10px 16px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:90vw;text-align:center}
 .toast[hidden]{display:none}
 
-.receipt{display:none}
+#printArea,.receipt{display:none!important}
 /* Receipt printer: Avasys ARP-3250 / Gainscha GP-80250
    80mm page, 72mm content box centered (4mm gutter each side). Sizes from RECEIPT via CSS vars. */
 @page{size:var(--rcpt-page,80mm) auto;margin:0}
@@ -1400,6 +1400,7 @@ async function renderReceiptPdfBlob(inv, items){
   try{ if(document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
   applyReceiptVars();
   const cap=preparePdfCaptureEl(inv, items);
+  try{
   await waitFrames(2);
   void cap.offsetHeight;
   let canvas=await captureReceiptCanvas(html2canvas, cap);
@@ -1414,7 +1415,6 @@ async function renderReceiptPdfBlob(inv, items){
     ink=canvasHasInk(canvas);
   }
   const heightMm=Math.max(Math.ceil(pxToMm(Math.max(cap.scrollHeight, cap.offsetHeight, cap.getBoundingClientRect().height||0))+(RECEIPT.measureExtraMm||1)), 40);
-  cap.remove();
   if(ink===false){
     const err=new Error('blank-receipt-canvas');
     err.code='blank-receipt-canvas';
@@ -1439,6 +1439,9 @@ async function renderReceiptPdfBlob(inv, items){
   pdf.addImage(img, 'JPEG', 0, 0, pageW, heightMm);
   const blob=pdf.output('blob');
   return {blob, heightMm, ink};
+  } finally {
+    cleanupPdfCapture();
+  }
 }
 
 async function writeInvoicePdfToFolder(inv, items, opts){
@@ -1567,11 +1570,7 @@ async function applyReceiptPageSize(){
   pa.setAttribute('data-content-width-mm', String(contentMm));
   if(!hadPrinting){
     document.documentElement.classList.remove('printing');
-    pa.style.visibility='';
-    pa.style.position='';
-    pa.style.left='';
-    pa.style.top='';
-    pa.style.display='';
+    pa.removeAttribute('style');
   }
   return heightMm;
 }
@@ -1582,6 +1581,58 @@ function beginPrintTitle(title){
 }
 function endPrintTitle(){
   if(_printTitlePrev!=null){ document.title=_printTitlePrev; _printTitlePrev=null; }
+}
+let _printCleanupTimer=null, _printCleanupBound=false, _printMq=null, _printMqFn=null, _afterPrintFn=null;
+function cleanupPdfCapture(){
+  const cap=document.getElementById('pdfCapture');
+  if(cap){ try{ cap.innerHTML=''; cap.remove(); }catch(e){ try{ cap.style.cssText='display:none!important;left:-10000px;'; }catch(e2){} } }
+}
+function clearPrintAreaStyles(pa){
+  pa=pa||document.getElementById('printArea');
+  if(!pa) return;
+  pa.removeAttribute('style');
+  pa.className='receipt';
+}
+function endPrintMode(){
+  document.documentElement.classList.remove('printing');
+  endPrintTitle();
+  clearPrintAreaStyles();
+  cleanupPdfCapture();
+}
+function resetPrintArea(){
+  endPrintMode();
+  const pa=document.getElementById('printArea');
+  if(pa){ pa.innerHTML=''; pa.className='receipt'; pa.removeAttribute('style'); }
+  cleanupPdfCapture();
+}
+function unbindPrintCleanup(){
+  if(_printCleanupTimer){ clearTimeout(_printCleanupTimer); _printCleanupTimer=null; }
+  if(_afterPrintFn){ window.removeEventListener('afterprint', _afterPrintFn); _afterPrintFn=null; }
+  if(_printMq && _printMqFn){
+    try{ if(_printMq.removeEventListener) _printMq.removeEventListener('change', _printMqFn); else if(_printMq.removeListener) _printMq.removeListener(_printMqFn); }catch(e){}
+    _printMq=null; _printMqFn=null;
+  }
+  _printCleanupBound=false;
+}
+function armPrintCleanup(){
+  unbindPrintCleanup();
+  _printCleanupBound=true;
+  const finish=()=>{
+    if(!_printCleanupBound) return;
+    unbindPrintCleanup();
+    endPrintMode();
+  };
+  _afterPrintFn=finish;
+  window.addEventListener('afterprint', finish);
+  try{
+    _printMq=window.matchMedia('print');
+    _printMqFn=e=>{ if(!e.matches) finish(); };
+    if(_printMq){
+      if(_printMq.addEventListener) _printMq.addEventListener('change', _printMqFn);
+      else if(_printMq.addListener) _printMq.addListener(_printMqFn);
+    }
+  }catch(e){}
+  _printCleanupTimer=setTimeout(finish, 2000);
 }
 
 window.applyReceiptPageSize=applyReceiptPageSize;
@@ -1619,6 +1670,10 @@ window.fillInvoiceSheet=fillInvoiceSheet;
 window.fillReportSheets=fillReportSheets;
 window.beginPrintTitle=beginPrintTitle;
 window.endPrintTitle=endPrintTitle;
+window.endPrintMode=endPrintMode;
+window.resetPrintArea=resetPrintArea;
+window.cleanupPdfCapture=cleanupPdfCapture;
+window.armPrintCleanup=armPrintCleanup;
 window.loadExcelJS=loadExcelJS;
 
 /* ---------- Invoice panel ---------- */
@@ -1649,10 +1704,16 @@ async function openInvoice(no){
   }
 }
 function closeInvoice(){
-  document.getElementById('invPanel').classList.remove('open');
+  resetPrintArea();
+  if(typeof hidePdfFolderPrompt==='function') hidePdfFolderPrompt();
+  if(typeof closeM==='function') try{ closeM(); }catch(e){}
+  const panel=document.getElementById('invPanel');
+  if(panel) panel.classList.remove('open');
   invViewNo=null;
-  if(!document.getElementById('repPanel').classList.contains('open') && !document.getElementById('bakPanel').classList.contains('open') && !modal.classList.contains('open'))
+  if(!document.getElementById('repPanel')?.classList.contains('open') && !document.getElementById('bakPanel')?.classList.contains('open') && !(typeof modal!=='undefined' && modal.classList.contains('open')))
     document.body.style.overflow='';
+  if(typeof goHome==='function') goHome();
+  try{ window.scrollTo({top:0}); }catch(e){ window.scrollTo(0,0); }
 }
 async function currentView(){
   if(invViewNo){
@@ -1930,9 +1991,12 @@ async function printInvoice(){
   beginPrintTitle(inv && inv.invoice_no ? String(inv.invoice_no) : 'فاکتور');
   document.documentElement.classList.add('printing');
   await applyReceiptPageSize();
-  const restore=()=>{ document.documentElement.classList.remove('printing'); endPrintTitle(); window.removeEventListener('afterprint', restore); };
-  window.addEventListener('afterprint', restore);
-  window.print();
+  armPrintCleanup();
+  try{ window.print(); }finally{
+    // print() may return before the dialog closes; @media print still shows #printArea.
+    // Drop html.printing and on-screen visibility immediately. afterprint/matchMedia/timeout also run.
+    endPrintMode();
+  }
 }
 function invoiceSheetRows(inv, items){
   const rows=[
@@ -2106,9 +2170,8 @@ async function printReport(){
   beginPrintTitle('گزارش');
   document.documentElement.classList.add('printing');
   await applyReceiptPageSize();
-  const restore=()=>{ document.documentElement.classList.remove('printing'); endPrintTitle(); window.removeEventListener('afterprint', restore); };
-  window.addEventListener('afterprint', restore);
-  window.print();
+  armPrintCleanup();
+  try{ window.print(); }finally{ endPrintMode(); }
 }
 async function excelReport(){
   const r=window._lastReport; if(!r){toast('گزارشی برای خروجی نیست'); return;}

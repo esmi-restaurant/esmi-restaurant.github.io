@@ -175,25 +175,40 @@ body.admin nav{top:50px}
 .toast[hidden]{display:none}
 
 .receipt{display:none}
+/* Receipt printer: Avasys ARP-3250 / Gainscha GP-80250 — values from RECEIPT in JS */
+@page{size:80mm auto;margin:0}
 @media print{
-  @page{size:80mm auto;margin:6mm}
-  body{background:#fff!important;color:#000!important}
+  @page{size:80mm auto;margin:0}
+  html,body{background:#fff!important;color:#000!important;margin:0!important;padding:0!important;width:80mm}
   body *{visibility:hidden}
-  #printArea, #printArea *{visibility:visible}
-  #printArea{display:block!important;position:absolute;inset:0;width:68mm;background:#fff;color:#000;font-family:Vazirmatn,Tahoma,sans-serif}
+  #printArea,#printArea *{visibility:visible}
+  #printArea{
+    display:block!important;position:absolute;top:0;left:0;right:0;
+    width:80mm;box-sizing:border-box;padding:2mm 4mm;margin:0 auto;
+    background:#fff!important;color:#000!important;
+    font-family:Vazirmatn,Tahoma,sans-serif;font-size:11pt;line-height:1.35;
+  }
+  #printArea *,#printArea{background:#fff!important;color:#000!important;box-shadow:none!important;border-color:#000!important}
   .admin-bar,.panel,.modal,.login-screen,.toast,header,nav,main,footer,.home{display:none!important}
 }
-#printArea.report-print{width:auto}
-@media print{
-  #printArea.report-print{@page{size:A4;margin:12mm} width:auto;max-width:100%}
+#printArea.receipt-preview{
+  display:block;position:relative;width:80mm;margin:16px auto;padding:2mm 4mm;
+  box-sizing:border-box;background:#fff;color:#000;
+  font-family:Vazirmatn,Tahoma,sans-serif;font-size:11pt;line-height:1.35;
+  box-shadow:0 0 0 1px #ddd;
 }
-.receipt-inner{color:#000;background:#fff;font-size:12px}
-.receipt-inner h1{margin:0 0 4px;text-align:center;font-family:Lalezar,Vazirmatn,Tahoma,sans-serif;font-size:22px;font-weight:400}
+.receipt-inner{color:#000;background:#fff;font-size:11pt;font-family:Vazirmatn,Tahoma,sans-serif}
+.receipt-inner h1{margin:0 0 2px;text-align:center;font-family:Vazirmatn,Tahoma,sans-serif;font-size:14pt;font-weight:800;color:#000}
 .receipt-inner .c{text-align:center}
-.receipt-inner hr{border:0;border-top:1px dashed #333;margin:8px 0}
-.receipt-inner table{width:100%;border-collapse:collapse}
-.receipt-inner td,.receipt-inner th{padding:3px 0;text-align:right}
-.receipt-inner .tot{font-weight:800;font-size:14px}
+.receipt-inner hr{border:0;border-top:1px dashed #000;margin:6px 0}
+.receipt-inner table{width:100%;border-collapse:collapse;table-layout:fixed}
+.receipt-inner th,.receipt-inner td{padding:2px 2px;text-align:right;vertical-align:top;font-size:10pt;color:#000;background:#fff;word-wrap:break-word;overflow-wrap:anywhere}
+.receipt-inner th:nth-child(1),.receipt-inner td:nth-child(1){width:44%}
+.receipt-inner th:nth-child(2),.receipt-inner td:nth-child(2){width:14%;white-space:nowrap}
+.receipt-inner th:nth-child(3),.receipt-inner td:nth-child(3){width:21%;white-space:nowrap}
+.receipt-inner th:nth-child(4),.receipt-inner td:nth-child(4){width:21%;white-space:nowrap}
+.receipt-inner .tot{font-weight:800;font-size:13pt;margin-top:4px;color:#000}
+.receipt-inner bdi{unicode-bidi:isolate;direction:ltr}
 
 </style>
 </head>
@@ -282,6 +297,22 @@ document.addEventListener('keydown',e=>{
 (function(){
 const AUTH_KEY='esmi_admin_ok';
 const CART_KEY='esmi_cart';
+/* Avasys ARP-3250 (= Gainscha GP-80250), 80mm thermal roll, printable ~72mm */
+const RECEIPT={
+  printer:'Avasys ARP-3250',
+  alsoKnownAs:'Gainscha GP-80250',
+  pageWidthMm:80,
+  contentWidthMm:72,
+  sidePadMm:4,
+  marginMm:0,
+  bodyPt:11,
+  totalPt:13,
+  titlePt:14,
+  fallbackPageHeightMm:297,
+  excel:{marginIn:0.1, headerFooterIn:0, colChars:[20,5,7,7]}
+};
+window.RECEIPT=RECEIPT;
+
 const MENU_VER_KEY='esmi_menu_ver';
 const LS_FALLBACK='esmi_idb_fallback';
 const JMONTHS=['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
@@ -678,6 +709,16 @@ function loadXlsx(){
     document.head.appendChild(s);
   });
 }
+function loadExcelJS(){
+  return new Promise((res,rej)=>{
+    if(window.ExcelJS) return res(window.ExcelJS);
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    s.onload=()=>res(window.ExcelJS);
+    s.onerror=()=>rej(new Error('exceljs'));
+    document.head.appendChild(s);
+  });
+}
 function downloadBlob(blob, name){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -685,7 +726,63 @@ function downloadBlob(blob, name){
   document.body.appendChild(a); a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();}, 500);
 }
+function colLetter(n){
+  let s='';
+  while(n>0){const r=(n-1)%26; s=String.fromCharCode(65+r)+s; n=Math.floor((n-1)/26);}
+  return s;
+}
+async function saveReceiptWorkbook(sheets, filename){
+  try{
+    const ExcelJS=await loadExcelJS();
+    const wb=new ExcelJS.Workbook();
+    sheets.forEach(({name, rows, cols})=>{
+      const widths=cols||RECEIPT.excel.colChars;
+      const ws=wb.addWorksheet(name,{
+        views:[{rightToLeft:true,state:'normal'}],
+        pageSetup:{
+          orientation:'portrait',
+          fitToPage:true,
+          fitToWidth:1,
+          fitToHeight:0,
+          paperWidth:RECEIPT.pageWidthMm+'mm',
+          paperHeight:RECEIPT.fallbackPageHeightMm+'mm',
+          horizontalCentered:true,
+          blackAndWhite:true,
+          margins:{
+            left:RECEIPT.excel.marginIn,
+            right:RECEIPT.excel.marginIn,
+            top:RECEIPT.excel.marginIn,
+            bottom:RECEIPT.excel.marginIn,
+            header:RECEIPT.excel.headerFooterIn,
+            footer:RECEIPT.excel.headerFooterIn
+          }
+        }
+      });
+      ws.columns=widths.map(w=>({width:w, style:{alignment:{horizontal:'right',vertical:'top',wrapText:true},font:{name:'Tahoma',size:11,color:{argb:'FF000000'}}}}));
+      rows.forEach(r=>ws.addRow(r));
+      const maxCols=Math.max(widths.length, ...rows.map(r=>r.length||0), 1);
+      const lastRow=Math.max(rows.length,1);
+      ws.pageSetup.printArea='A1:'+colLetter(maxCols)+lastRow;
+      ws.pageSetup.fitToPage=true;
+      ws.pageSetup.fitToWidth=1;
+      ws.pageSetup.fitToHeight=0;
+      ws.headerFooter={oddHeader:'',oddFooter:'',evenHeader:'',evenFooter:''};
+      ws.eachRow(row=>{
+        row.eachCell({includeEmpty:false},cell=>{
+          cell.font=Object.assign({name:'Tahoma',size:11,color:{argb:'FF000000'}}, cell.font||{});
+          cell.alignment=Object.assign({horizontal:'right',vertical:'top',wrapText:true}, cell.alignment||{});
+        });
+      });
+    });
+    const buf=await wb.xlsx.writeBuffer();
+    downloadBlob(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), filename);
+  }catch(e){
+    console.error(e);
+    toast('بارگذاری کتابخانه اکسل ناموفق بود');
+  }
+}
 function saveAoA(sheets, filename){
+  // used by backup; invoice/report use saveReceiptWorkbook (ExcelJS page setup)
   return loadXlsx().then(XLSX=>{
     const wb=XLSX.utils.book_new();
     wb.Workbook={Views:[{RTL:true}]};
@@ -697,6 +794,36 @@ function saveAoA(sheets, filename){
     XLSX.writeFile(wb, filename);
   }).catch(()=>{toast('بارگذاری کتابخانه اکسل ناموفق بود');});
 }
+function pxToMm(px){return px*25.4/96;}
+function applyReceiptPageSize(){
+  const pa=document.getElementById('printArea');
+  if(!pa) return RECEIPT.fallbackPageHeightMm;
+  const prev=pa.getAttribute('style')||'';
+  pa.style.display='block';
+  pa.style.visibility='hidden';
+  pa.style.position='absolute';
+  pa.style.left='0';
+  pa.style.top='0';
+  pa.style.width=RECEIPT.pageWidthMm+'mm';
+  pa.style.padding='2mm '+RECEIPT.sidePadMm+'mm';
+  pa.style.boxSizing='border-box';
+  pa.style.background='#fff';
+  pa.style.color='#000';
+  const h=Math.ceil(pxToMm(Math.max(pa.scrollHeight, pa.offsetHeight))+4);
+  const heightMm=Math.max(h, 40);
+  let s=document.getElementById('receiptPageStyle');
+  if(!s){s=document.createElement('style'); s.id='receiptPageStyle'; document.head.appendChild(s);}
+  s.textContent=`@page{size:${RECEIPT.pageWidthMm}mm ${heightMm}mm;margin:0}`;
+  pa.setAttribute('data-page-height-mm', String(heightMm));
+  pa.style.visibility='';
+  pa.style.position='';
+  pa.style.left='';
+  pa.style.top='';
+  return heightMm;
+}
+window.applyReceiptPageSize=applyReceiptPageSize;
+window.saveReceiptWorkbook=saveReceiptWorkbook;
+window.loadExcelJS=loadExcelJS;
 
 /* ---------- Invoice panel ---------- */
 let invViewNo=null; // if set, viewing a saved invoice (read-only)
@@ -753,7 +880,7 @@ function receiptHTML(inv, items, report){
     <div>شماره میز: ${inv.table_no?toFa(inv.table_no):'—'}</div>
     <hr>
     <table>
-      <thead><tr><th>نام آیتم</th><th>تعداد</th><th>قیمت واحد</th><th>جمع</th></tr></thead>
+      <thead><tr><th>نام</th><th>تعداد</th><th>فی</th><th>جمع</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
     <hr>
@@ -890,6 +1017,7 @@ async function printInvoice(){
   const pa=document.getElementById('printArea');
   pa.className='receipt';
   pa.innerHTML=receiptHTML(inv, items);
+  applyReceiptPageSize();
   window.print();
 }
 function invoiceSheetRows(inv, items){
@@ -899,7 +1027,7 @@ function invoiceSheetRows(inv, items){
     ['تاریخ', inv.jalali||''],
     ['شماره میز', inv.table_no||''],
     [],
-    ['نام آیتم','تعداد','قیمت واحد','جمع']
+    ['نام','تعداد','فی','جمع']
   ];
   items.forEach(it=>{
     const unit=it.has_price===false?'بدون قیمت':it.unit_price;
@@ -912,13 +1040,13 @@ function invoiceSheetRows(inv, items){
 async function excelInvoice(){
   const {inv, items}=await currentView();
   if(!items.length){toast('آیتمی برای خروجی نیست'); return;}
-  await saveAoA([{name:'فاکتور', rows:invoiceSheetRows(inv, items), cols:[28,10,14,14]}], `فاکتور-${inv.invoice_no}.xlsx`);
+  await saveReceiptWorkbook([{name:'فاکتور', rows:invoiceSheetRows(inv, items), cols:RECEIPT.excel.colChars}], `فاکتور-${inv.invoice_no}.xlsx`);
 }
 async function excelSaved(no){
   const inv=await getInvoice(no);
   const items=await getInvoiceItems(no);
   if(!inv) return;
-  await saveAoA([{name:'فاکتور', rows:invoiceSheetRows(inv, items), cols:[28,10,14,14]}], `فاکتور-${inv.invoice_no}.xlsx`);
+  await saveReceiptWorkbook([{name:'فاکتور', rows:invoiceSheetRows(inv, items), cols:RECEIPT.excel.colChars}], `فاکتور-${inv.invoice_no}.xlsx`);
 }
 
 /* ---------- Reports ---------- */
@@ -1044,23 +1172,24 @@ async function renderReport(){
 async function printReport(){
   const r=window._lastReport; if(!r) return;
   const pa=document.getElementById('printArea');
-  pa.className='receipt report-print';
-  const top=r.top.map(t=>`<tr><td>${t.name}</td><td>${toFa(t.qty)}</td><td>${fmtPrice(t.amount)}</td></tr>`).join('');
-  const rows=r.list.map(inv=>`<tr><td>${inv.invoice_no}</td><td>${inv.jalali||''}</td><td>${inv.table_no||'—'}</td><td>${fmtPrice(inv.total)}</td></tr>`).join('');
+  pa.className='receipt';
+  const top=r.top.map(t=>`<tr><td>${t.name}</td><td>${toFa(t.qty)}</td><td></td><td>${fmtPrice(t.amount)}</td></tr>`).join('');
+  const rows=r.list.map(inv=>`<tr><td><bdi dir="ltr" style="unicode-bidi:isolate;direction:ltr">${toFa(inv.invoice_no)}</bdi></td><td>${inv.jalali||''}</td><td>${inv.table_no?toFa(inv.table_no):'—'}</td><td>${fmtPrice(inv.total)}</td></tr>`).join('');
   pa.innerHTML=`<div class="receipt-inner">
     <h1>رستوران اسمی</h1>
     <div class="c">گزارش فروش</div>
     <div class="c">${r.from||''} تا ${r.to||''}${r.table?' — میز '+r.table:''}</div>
     <hr>
     <div>تعداد فاکتور: ${toFa(r.list.length)}</div>
-    <div>مجموع فروش: ${fmtPrice(r.total)} تومان</div>
+    <div class="tot">مجموع فروش: ${fmtPrice(r.total)} تومان</div>
     <hr>
     <b>پرفروش‌ترین آیتم‌ها</b>
-    <table><thead><tr><th>آیتم</th><th>تعداد</th><th>مبلغ</th></tr></thead><tbody>${top}</tbody></table>
+    <table><thead><tr><th>نام</th><th>تعداد</th><th></th><th>جمع</th></tr></thead><tbody>${top}</tbody></table>
     <hr>
     <b>فهرست فاکتورها</b>
     <table><thead><tr><th>شماره</th><th>تاریخ</th><th>میز</th><th>جمع</th></tr></thead><tbody>${rows}</tbody></table>
   </div>`;
+  applyReceiptPageSize();
   window.print();
 }
 async function excelReport(){
@@ -1073,14 +1202,14 @@ async function excelReport(){
     ['شماره فاکتور','تاریخ','شماره میز','جمع','وضعیت']
   ];
   r.list.forEach(inv=>invRows.push([inv.invoice_no, inv.jalali||'', inv.table_no||'', inv.total, inv.status||'']));
-  const itemRows=[['شماره فاکتور','نام آیتم','تعداد','قیمت واحد','جمع']];
+  const itemRows=[['شماره فاکتور','نام','تعداد','فی','جمع']];
   r.allItems.forEach(it=>itemRows.push([it.invoice_no, it.name, it.qty, it.has_price===false?'بدون قیمت':it.unit_price, it.line_total]));
   const topRows=[['نام آیتم','تعداد','مبلغ']];
   r.top.forEach(t=>topRows.push([t.name, t.qty, t.amount]));
-  await saveAoA([
-    {name:'فاکتورها', rows:invRows, cols:[18,28,12,14,14]},
-    {name:'آیتم‌ها', rows:itemRows, cols:[18,28,10,14,14]},
-    {name:'پرفروش', rows:topRows, cols:[28,10,14]}
+  await saveReceiptWorkbook([
+    {name:'فاکتورها', rows:invRows, cols:[10,12,5,7,5]},
+    {name:'آیتم‌ها', rows:itemRows, cols:[10,14,5,7,7]},
+    {name:'پرفروش', rows:topRows, cols:[20,7,12]}
   ], `گزارش-فروش.xlsx`);
 }
 

@@ -160,5 +160,29 @@ modal.addEventListener('click',e=>{if(e.target===modal)closeM()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
 (()=>{renderHome();const h=new URLSearchParams(location.hash.slice(1));if(h.has('s')){const k=h.get('s');const c=+h.get('c')||0;enter(k,Math.min(c,Math.max(SECTIONS[k].menu.length-1,0)));if(h.has('i'))openItem(c,+h.get('i'))}})();
 </script>
+<script>
+(function(){
+  try{
+    if(location.hostname!=='esmi-restaurant.github.io') return;
+    var API='https://abacus.jasoncameron.dev';
+    var NS='esmi-restaurant.github.io';
+    var p={};
+    new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Tehran',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).forEach(function(x){if(x.type!=='literal')p[x.type]=x.value});
+    var day=p.year+p.month+p.day;
+    var hour=day+p.hour;
+    function hit(key){
+      try{fetch(API+'/hit/'+encodeURIComponent(NS)+'/'+encodeURIComponent(key),{mode:'cors',credentials:'omit',cache:'no-store',keepalive:true}).catch(function(){})}catch(e){}
+    }
+    hit('visits-total');
+    hit('visits-'+hour);
+    try{
+      if(localStorage.getItem('esmi_visit_day')!==day){
+        localStorage.setItem('esmi_visit_day',day);
+        hit('visits-unique-'+day);
+      }
+    }catch(e){}
+  }catch(e){}
+})();
+</script>
 </body>
 </html>

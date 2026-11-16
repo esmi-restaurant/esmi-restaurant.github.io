@@ -164,20 +164,20 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeM()});
 (function(){
   try{
     if(location.hostname!=='esmi-restaurant.github.io') return;
-    var API='https://abacus.jasoncameron.dev';
+    var API='https://tallywire.cronpulse.workers.dev';
     var NS='esmi-restaurant.github.io';
     var p={};
     new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Tehran',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).forEach(function(x){if(x.type!=='literal')p[x.type]=x.value});
     var day=p.year+p.month+p.day;
     var hour=day+p.hour;
     function hit(key){
-      try{fetch(API+'/hit/'+encodeURIComponent(NS)+'/'+encodeURIComponent(key),{mode:'cors',credentials:'omit',cache:'no-store',keepalive:true}).catch(function(){})}catch(e){}
+      try{fetch(API+'/hit/'+encodeURIComponent(NS)+'/'+encodeURIComponent(key),{mode:'cors',credentials:'omit',keepalive:true}).catch(function(){})}catch(e){}
     }
     hit('visits-total');
     hit('visits-'+hour);
     try{
-      if(localStorage.getItem('esmi_visit_day')!==day){
-        localStorage.setItem('esmi_visit_day',day);
+      if(localStorage.getItem('esmi_visit_day2')!==day){
+        localStorage.setItem('esmi_visit_day2',day);
         hit('visits-unique-'+day);
       }
     }catch(e){}

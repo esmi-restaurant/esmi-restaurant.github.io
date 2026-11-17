@@ -158,6 +158,7 @@ body.admin nav{top:50px}
 .hist-item{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;padding:10px 0;border-bottom:1px solid #242424;font-size:13px}
 .hist-item .actions{margin-right:auto;display:flex;gap:6px}
 .hist-item .actions button{padding:6px 10px;font-size:12px}
+.hist-item .actions button.danger{color:#ff8a80;border-color:#4a2a2a;background:#2a1c1c}
 
 .inv-search{position:relative;margin:0 0 14px}
 .inv-search input{width:100%;background:#141414;border:1px solid #3a3a3a;border-radius:14px;color:#f1f1f1;font:inherit;font-size:14px;padding:11px 14px}
@@ -924,6 +925,75 @@ async function getInvoiceItems(no){
     rq.onsuccess=()=>res(rq.result||[]);
     rq.onerror=()=>rej(rq.error);
   });
+}
+async function deleteInvoiceRecord(no){
+  no=String(no||'');
+  if(!no) return;
+  await dbOpen();
+  const parsed=parseInvoiceNo(no);
+  if(useLS){
+    const d=lsInit();
+    d.invoices=d.invoices||{};
+    delete d.invoices[no];
+    d.invoice_items=(d.invoice_items||[]).filter(x=>x.invoice_no!==no);
+    // Never lower the invoice-number counter; keep numbers unique after deletion.
+    if(parsed){
+      d.meta=d.meta||{};
+      d.meta.counters=d.meta.counters||{};
+      if((d.meta.counters[parsed.dayKey]||0)<parsed.n) d.meta.counters[parsed.dayKey]=parsed.n;
+    }
+    lsSave(d);
+    return;
+  }
+  await new Promise((res,rej)=>{
+    const stores=['invoices','invoice_items','meta'];
+    const tx=idb.transaction(stores,'readwrite');
+    tx.objectStore('invoices').delete(no);
+    const itemSt=tx.objectStore('invoice_items');
+    const idx=itemSt.index('by_inv');
+    const curRq=idx.openCursor(IDBKeyRange.only(no));
+    curRq.onerror=()=>rej(curRq.error);
+    curRq.onsuccess=()=>{
+      const c=curRq.result;
+      if(c){ c.delete(); c.continue(); }
+    };
+    if(parsed){
+      const metaSt=tx.objectStore('meta');
+      const ctrRq=metaSt.get('counters');
+      ctrRq.onerror=()=>rej(ctrRq.error);
+      ctrRq.onsuccess=()=>{
+        const rec=ctrRq.result||{key:'counters', byDay:{}};
+        const byDay=Object.assign({}, rec.byDay||{});
+        if((byDay[parsed.dayKey]||0)<parsed.n){
+          byDay[parsed.dayKey]=parsed.n;
+          metaSt.put({key:'counters', byDay});
+        }
+      };
+    }
+    tx.oncomplete=()=>res();
+    tx.onerror=()=>rej(tx.error);
+  });
+}
+async function deleteInvoice(no){
+  no=String(no||'');
+  if(!no) return false;
+  if(!confirm('فاکتور شماره '+toFa(no)+' حذف شود؟')) return false;
+  try{
+    await deleteInvoiceRecord(no);
+    if(invViewNo===no) invViewNo=null;
+    if(lastSaved && lastSaved.invoice_no===no) lastSaved=null;
+    if(document.getElementById('invPanel')?.classList.contains('open')){
+      if(!invViewNo && !lastSaved) await renderInvoice();
+      else await renderHistory();
+    }
+    if(document.getElementById('repPanel')?.classList.contains('open')) await renderReport();
+    toast('فاکتور حذف شد');
+    return true;
+  }catch(e){
+    console.error(e);
+    toast('حذف فاکتور ناموفق بود');
+    return false;
+  }
 }
 async function exportAllData(){
   const invoices=await listInvoices();
@@ -2316,6 +2386,7 @@ async function renderHistory(){
         <button type="button" onclick="openInvoice('${inv.invoice_no}')">مشاهده</button>
         <button type="button" onclick="openInvoice('${inv.invoice_no}').then(()=>printInvoice())">چاپ</button>
         <button type="button" onclick="excelSaved('${inv.invoice_no}')">اکسل</button>
+        <button type="button" class="danger" onclick="deleteInvoice('${inv.invoice_no}')">حذف</button>
       </div>
     </div>`).join('');
 }
@@ -2738,7 +2809,9 @@ window.__esmiSaveInvoiceAt=async function(iso, table, pairs){
   const items=lines.map(l=>({item_id:l.id, name:l.name, qty:l.qty, unit_price:l.unit, line_total:l.line, has_price:l.has_price}));
   return await saveNewInvoice(invBase, items, when);
 };
-window.__esmiDB={dbOpen, syncMenuItems, listInvoices, exportAllData, peekNextNo, allocNextNo, saveNewInvoice, importAllData, getCounters, setCounters, getInvoice, getInvoiceItems, parseInvoiceNo, formatInvoiceNo};
+window.__esmiDB={dbOpen, syncMenuItems, listInvoices, exportAllData, peekNextNo, allocNextNo, saveNewInvoice, importAllData, getCounters, setCounters, getInvoice, getInvoiceItems, deleteInvoiceRecord, parseInvoiceNo, formatInvoiceNo};
+window.deleteInvoice=deleteInvoice;
+window.deleteInvoiceRecord=deleteInvoiceRecord;
 window.saveNewInvoice=saveNewInvoice;
 window.importAllData=importAllData;
 window.parseInvoiceNo=parseInvoiceNo;

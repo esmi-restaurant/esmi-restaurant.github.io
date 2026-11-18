@@ -1175,10 +1175,48 @@ function parseMoneyInput(s, allowZero){
   if(!allowZero && n===0) return {ok:false, empty:false, value:0};
   return {ok:true, empty:false, value:n};
 }
+function parsePercentInput(s){
+  const raw=String(s==null?'':s).trim();
+  if(!raw) return {ok:true, empty:true, value:0};
+  let t=toEn(raw).replace(/[٪%\s]/g,'').replace(/٫/g,'.');
+  if(t.includes(',') && !t.includes('.')) t=t.replace(',', '.');
+  t=t.replace(/[٬]/g,'');
+  if(!/^\d+(\.\d+)?$/.test(t)) return {ok:false, empty:false, value:0};
+  const n=Number(t);
+  if(!isFinite(n) || n<0 || n>100) return {ok:false, empty:false, value:0};
+  return {ok:true, empty:false, value:n};
+}
+function fmtPercent(n){
+  const x=Number(n);
+  if(!isFinite(x)) return toFa(0);
+  const r=Math.round(x*10000)/10000;
+  const s=Number.isInteger(r)?String(r):String(r);
+  return toFa(s).replace('.', '٫');
+}
+function discountAmountFromPercent(sub, pct){
+  const s=Number(sub)||0, p=Number(pct)||0;
+  if(s<=0 || p<=0) return 0;
+  return Math.round(s*p/100);
+}
 function invoiceDiscount(inv){
   if(!inv || inv.discount==null || inv.discount==='') return 0;
   const n=Number(inv.discount);
   return isFinite(n)&&n>0?n:0;
+}
+function invoiceDiscountPercent(inv){
+  if(!inv || inv.discountPercent==null || inv.discountPercent==='') return null;
+  const n=Number(inv.discountPercent);
+  if(!isFinite(n) || n<0) return null;
+  return n;
+}
+function discountRowLabel(inv, items){
+  const pct=invoiceDiscountPercent(inv);
+  if(pct!=null && pct>0) return 'تخفیف ('+fmtPercent(pct)+'٪)';
+  return 'تخفیف';
+}
+function discountDisplayText(inv, items){
+  const disc=invoiceDiscount(inv);
+  return discountRowLabel(inv, items)+': '+fmtPrice(disc)+' تومان';
 }
 function invoiceSubtotal(inv, items){
   if(inv && inv.subtotal!=null && inv.subtotal!==''){
@@ -1206,7 +1244,7 @@ function adminItemLabel(it){
   const n=String(it&&it.name||'');
   return isManualItem(it)?(n+' ('+adminManualLabel()+')'):n;
 }
-function emptyCart(table){return {items:{}, table:table||'', manuals:[], manualSeq:0, discount:0};}
+function emptyCart(table){return {items:{}, table:table||'', manuals:[], manualSeq:0, discountPercent:0};}
 function normalizeCart(c){
   if(!c||typeof c!=='object') return emptyCart('');
   const manuals=Array.isArray(c.manuals)?c.manuals.map(m=>({
@@ -1217,7 +1255,7 @@ function normalizeCart(c){
     table:c.table||'',
     manuals,
     manualSeq:Number(c.manualSeq)||0,
-    discount:Math.max(0, Number(c.discount)||0)
+    discountPercent:(()=>{ const n=Number(c.discountPercent); return isFinite(n)?Math.min(100, Math.max(0, n)):0; })()
   };
 }
 function loadCart(){
@@ -1314,9 +1352,12 @@ function cartLines(){
   return menu.concat(manuals);
 }
 function cartSubtotal(){return cartLines().reduce((s,l)=>s+l.line,0);}
+function cartDiscountPercent(){
+  const n=Number(loadCart().discountPercent);
+  return isFinite(n)?Math.min(100, Math.max(0, n)):0;
+}
 function cartDiscount(){
-  const d=Math.max(0, Number(loadCart().discount)||0);
-  return Math.min(d, cartSubtotal());
+  return discountAmountFromPercent(cartSubtotal(), cartDiscountPercent());
 }
 function cartTotal(){return Math.max(0, cartSubtotal()-cartDiscount());}
 function addManualItem(){
@@ -1348,43 +1389,47 @@ function addManualItem(){
   show('');
   afterCartChange();
 }
+function refreshDiscountTotals(sub, pct){
+  const amount=discountAmountFromPercent(sub, pct);
+  const subEl=document.getElementById('invSubtotalVal');
+  const payEl=document.getElementById('invPayableVal');
+  const amtEl=document.getElementById('invDiscountAmtVal');
+  const amtLabel=document.getElementById('invDiscountAmtLabel');
+  if(subEl) subEl.textContent=fmtPrice(sub)+' تومان';
+  if(payEl) payEl.textContent=fmtPrice(Math.max(0, sub-amount))+' تومان';
+  if(amtEl) amtEl.textContent=fmtPrice(amount)+' تومان';
+  if(amtLabel) amtLabel.textContent=(pct>0)?('تخفیف ('+fmtPercent(pct)+'٪)'):'تخفیف';
+  return amount;
+}
 function onDiscountInput(el){
   const err=document.getElementById('discErr');
   const box=document.getElementById('invTotals');
   const raw=el?el.value:'';
-  const parsed=parseMoneyInput(raw, true);
+  const parsed=parsePercentInput(raw);
   if(String(raw).trim() && !parsed.ok){
-    if(err){ err.hidden=false; err.textContent='مبلغ تخفیف نامعتبر است'; }
+    if(err){ err.hidden=false; err.textContent='درصد تخفیف باید بین ۰ تا ۱۰۰ باشد'; }
     if(box) box.classList.add('bad-disc');
     return;
   }
-  const sub=cartSubtotal();
-  const val=parsed.ok?parsed.value:0;
-  if(val>sub){
-    if(err){ err.hidden=false; err.textContent='تخفیف نمی‌تواند بیشتر از جمع فاکتور باشد'; }
-    if(box) box.classList.add('bad-disc');
-    return;
-  }
+  const pct=parsed.ok?parsed.value:0;
   if(err) err.hidden=true;
   if(box) box.classList.remove('bad-disc');
   const c=loadCart();
-  c.discount=val;
+  c.discountPercent=pct;
   saveCart(c);
-  const subEl=document.getElementById('invSubtotalVal');
-  const payEl=document.getElementById('invPayableVal');
-  if(subEl) subEl.textContent=fmtPrice(sub)+' تومان';
-  if(payEl) payEl.textContent=fmtPrice(Math.max(0, sub-val))+' تومان';
+  refreshDiscountTotals(cartSubtotal(), pct);
 }
 function onDiscountBlur(el){
   onDiscountInput(el);
-  const parsed=parseMoneyInput(el?el.value:'', true);
-  const sub=cartSubtotal();
-  if(!parsed.ok || parsed.value>sub){
-    if(el) el.value=loadCart().discount?toFa(loadCart().discount):'';
+  const parsed=parsePercentInput(el?el.value:'');
+  if(!parsed.ok){
+    const pct=cartDiscountPercent();
+    if(el) el.value=pct?fmtPercent(pct):'';
     const err=document.getElementById('discErr');
     const box=document.getElementById('invTotals');
     if(err) err.hidden=true;
     if(box) box.classList.remove('bad-disc');
+    refreshDiscountTotals(cartSubtotal(), pct);
   }
 }
 
@@ -1543,7 +1588,7 @@ function fillInvoiceSheet(ws, inv, items){
   const sub=invoiceSubtotal(inv, items);
   const disc=invoiceDiscount(inv);
   const pay=invoicePayable(inv, items);
-  const totalRows=disc?[['جمع فاکتور', sub],['تخفیف', disc],['قابل پرداخت', pay]]:[['جمع کل', pay]];
+  const totalRows=disc?[['جمع فاکتور', sub],[discountRowLabel(inv, items), disc],['قابل پرداخت', pay]]:[['جمع کل', pay]];
   totalRows.forEach(([label, val], idx)=>{
     ws.mergeCells(`A${r}:C${r}`);
     ['A','B','C'].forEach(col=>{
@@ -2381,6 +2426,7 @@ async function currentView(){
   const now=new Date();
   const p=jalaliParts(now);
   const sub=cartSubtotal();
+  const pct=cartDiscountPercent();
   const disc=cartDiscount();
   const inv={
     invoice_no:no,
@@ -2389,6 +2435,7 @@ async function currentView(){
     jalali_ymd:p.ymd,
     table_no:loadCart().table||'',
     subtotal:sub,
+    discountPercent:pct,
     discount:disc,
     total:Math.max(0, sub-disc),
     status:'draft'
@@ -2601,14 +2648,19 @@ async function renderInvoice(){
       const sub=invoiceSubtotal(inv, items);
       const disc=invoiceDiscount(inv);
       const pay=invoicePayable(inv, items);
-      const discVal=editable?(loadCart().discount?toFa(loadCart().discount):''):'';
+      const pct=editable?cartDiscountPercent():invoiceDiscountPercent(inv);
+      const discVal=editable&&pct?fmtPercent(pct):'';
       const discRow=editable?`<div class="inv-total-row">
-        <span>تخفیف (تومان)</span>
+        <span>تخفیف (درصد)</span>
         <div class="inv-disc-field">
-          <input id="invDiscount" inputmode="numeric" placeholder="۰" value="${discVal}" autocomplete="off" oninput="onDiscountInput(this)" onblur="onDiscountBlur(this)">
-          <span class="unit">تومان</span>
+          <input id="invDiscount" inputmode="decimal" placeholder="۰" value="${discVal}" autocomplete="off" oninput="onDiscountInput(this)" onblur="onDiscountBlur(this)">
+          <span class="unit">٪</span>
         </div>
-      </div>`:`<div class="inv-total-row"><span>تخفیف</span><b>${fmtPrice(disc)} تومان</b></div>`;
+      </div>
+      <div class="inv-total-row" id="invDiscountAmtRow">
+        <span id="invDiscountAmtLabel">${pct>0?('تخفیف ('+fmtPercent(pct)+'٪)'):'تخفیف'}</span>
+        <b id="invDiscountAmtVal">${fmtPrice(disc)} تومان</b>
+      </div>`:`<div class="inv-total-row"><span>${escHtml(discountRowLabel(inv, items))}</span><b>${fmtPrice(disc)} تومان</b></div>`;
       return `<div class="inv-totals" id="invTotals">
       <div class="inv-total-row"><span>جمع فاکتور</span><b id="invSubtotalVal">${fmtPrice(sub)} تومان</b></div>
       ${discRow}
@@ -2652,7 +2704,7 @@ async function renderHistory(){
     </div>`).join('');
 }
 function clearCartAsk(){
-  if(!cartCount() && !loadCart().discount){toast('سبد خرید خالی است'); return;}
+  if(!cartCount() && !loadCart().discountPercent){toast('سبد خرید خالی است'); return;}
   if(!confirm('سبد خرید پاک شود؟')) return;
   const c=loadCart(); saveCart(emptyCart(c.table||''));
   refreshQtyUI(); renderInvoice();
@@ -2669,24 +2721,21 @@ async function submitInvoice(){
     const sub=lines.reduce((s,l)=>s+l.line,0);
     const discIn=document.getElementById('invDiscount');
     if(discIn) onDiscountInput(discIn);
-    const discParsed=parseMoneyInput(discIn?discIn.value:(loadCart().discount||0), true);
+    const discParsed=parsePercentInput(discIn?discIn.value:(loadCart().discountPercent||0));
     if(String(discIn?.value||'').trim() && !discParsed.ok){
-      toast('مبلغ تخفیف نامعتبر است');
+      toast('درصد تخفیف باید بین ۰ تا ۱۰۰ باشد');
       if(btn) btn.disabled=false;
       return;
     }
-    const disc=discParsed.ok?discParsed.value:0;
-    if(disc>sub){
-      toast('تخفیف نمی‌تواند بیشتر از جمع فاکتور باشد');
-      if(btn) btn.disabled=false;
-      return;
-    }
+    const pct=discParsed.ok?discParsed.value:0;
+    const disc=discountAmountFromPercent(sub, pct);
     const invBase={
       created_at:now.toISOString(),
       jalali:faDateTime(now),
       jalali_ymd:jalaliParts(now).ymd,
       table_no:table,
       subtotal:sub,
+      discountPercent:pct,
       discount:disc,
       total:Math.max(0, sub-disc),
       status:'registered'
@@ -2743,7 +2792,7 @@ function invoiceSheetRows(inv, items){
   const pay=invoicePayable(inv, items);
   if(disc){
     rows.push(['جمع فاکتور','','',sub]);
-    rows.push(['تخفیف','','',disc]);
+    rows.push([discountRowLabel(inv, items),'','',disc]);
     rows.push(['قابل پرداخت','','',pay]);
   }else{
     rows.push(['جمع کل','','',pay]);
@@ -3047,9 +3096,16 @@ window.onDiscountInput=onDiscountInput;
 window.onDiscountBlur=onDiscountBlur;
 window.invoicePayable=invoicePayable;
 window.invoiceDiscount=invoiceDiscount;
+window.invoiceDiscountPercent=invoiceDiscountPercent;
 window.invoiceSubtotal=invoiceSubtotal;
 window.cartSubtotal=cartSubtotal;
 window.cartDiscount=cartDiscount;
+window.cartDiscountPercent=cartDiscountPercent;
+window.parsePercentInput=parsePercentInput;
+window.discountAmountFromPercent=discountAmountFromPercent;
+window.fmtPercent=fmtPercent;
+window.discountDisplayText=discountDisplayText;
+window.discountRowLabel=discountRowLabel;
 window.openInvoice=openInvoice;
 window.closeInvoice=closeInvoice;
 window.submitInvoice=submitInvoice;
@@ -3113,12 +3169,19 @@ window.__esmiSaveInvoiceAt=async function(iso, table, pairs, extra){
     lines.push({id:m.id||('manual|tmp'), name:m.name, qty, unit, line:unit*qty, has_price:true, manual:true});
   });
   const sub=lines.reduce((s,l)=>s+l.line,0);
-  const disc=Math.max(0, Number(extra.discount)||0);
+  let pct=null, disc;
+  if(extra.discountPercent!=null && extra.discountPercent!==''){
+    pct=Number(extra.discountPercent)||0;
+    disc=discountAmountFromPercent(sub, pct);
+  }else{
+    disc=Math.max(0, Number(extra.discount)||0);
+  }
   const invBase={created_at:when.toISOString(), jalali:faDateTime(when), jalali_ymd:p.ymd, table_no:(table==null||table==='')?'':String(table), subtotal:sub, discount:disc, total:Math.max(0, sub-disc), status:'registered'};
+  if(pct!=null) invBase.discountPercent=pct;
   const items=lines.map(l=>({item_id:l.id, name:l.name, qty:l.qty, unit_price:l.unit, line_total:l.line, has_price:l.has_price!==false, manual:!!l.manual}));
   return await saveNewInvoice(invBase, items, when);
 };
-window.__esmiDB={dbOpen, syncMenuItems, listInvoices, exportAllData, peekNextNo, allocNextNo, saveNewInvoice, importAllData, getCounters, setCounters, getInvoice, getInvoiceItems, deleteInvoiceRecord, parseInvoiceNo, formatInvoiceNo, invoicePayable, invoiceDiscount, invoiceSubtotal};
+window.__esmiDB={dbOpen, syncMenuItems, listInvoices, exportAllData, peekNextNo, allocNextNo, saveNewInvoice, importAllData, getCounters, setCounters, getInvoice, getInvoiceItems, deleteInvoiceRecord, parseInvoiceNo, formatInvoiceNo, invoicePayable, invoiceDiscount, invoiceDiscountPercent, invoiceSubtotal};
 window.deleteInvoice=deleteInvoice;
 window.deleteInvoiceRecord=deleteInvoiceRecord;
 window.saveNewInvoice=saveNewInvoice;

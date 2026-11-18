@@ -149,6 +149,27 @@ body.admin nav{top:50px}
 .inv-empty{text-align:center;color:#8f8f8f;padding:28px 8px}
 .inv-total{display:flex;justify-content:space-between;align-items:center;margin:14px 0 16px;padding:12px 14px;background:#141414;border-radius:14px;border:1px solid #2c2c2c}
 .inv-total b{font-family:Lalezar,Vazirmatn,Tahoma,sans-serif;font-weight:400;font-size:24px}
+
+.inv-manual{margin:0 0 14px;padding:12px;background:#141414;border:1px solid #2c2c2c;border-radius:14px}
+.inv-manual h3{margin:0 0 10px;font-size:14px;font-weight:700}
+.inv-manual-grid{display:grid;grid-template-columns:1.4fr 1fr .7fr;gap:8px}
+@media(max-width:520px){.inv-manual-grid{grid-template-columns:1fr 1fr}}
+.inv-manual-grid .field{margin:0}
+.inv-manual-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.inv-manual-actions .btn{min-height:42px}
+.inv-totals{margin:14px 0 16px;background:#141414;border-radius:14px;border:1px solid #2c2c2c;overflow:hidden}
+.inv-totals .inv-total-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #2c2c2c}
+.inv-totals .inv-total-row:last-child{border-bottom:0}
+.inv-totals .inv-total-row span{color:#8f8f8f;font-size:13px}
+.inv-totals .inv-total-row b{font-size:15px}
+.inv-totals .inv-total-row.pay{background:#191919}
+.inv-totals .inv-total-row.pay span{color:#cfcfcf;font-weight:700}
+.inv-totals .inv-total-row.pay b{font-family:Lalezar,Vazirmatn,Tahoma,sans-serif;font-weight:400;font-size:24px;color:#fff}
+.inv-totals .inv-disc-field{display:flex;align-items:center;gap:8px}
+.inv-totals .inv-disc-field input{width:140px;max-width:42vw;border:1px solid #3a3a3a;border-radius:10px;background:#111;color:#fff;font:inherit;font-size:14px;text-align:left;direction:ltr;padding:8px 10px}
+.inv-totals .inv-disc-field input:focus{outline:0;border-color:#888}
+.inv-totals .inv-disc-field .unit{color:#8f8f8f;font-size:12px;white-space:nowrap}
+.inv-totals.bad-disc{border-color:#e57373}
 .btn-row{display:flex;flex-wrap:wrap;gap:8px}
 .btn-row button,.btn{border:1px solid #3a3a3a;background:#2a2a2a;color:#eee;border-radius:12px;font:inherit;font-size:13px;font-weight:600;padding:10px 14px;cursor:pointer}
 .btn-row button.primary,.btn.primary{background:#e6e6e6;color:#111;border-color:#e6e6e6}
@@ -397,7 +418,7 @@ html.printing #printArea .receipt-inner table.items td{border:1px solid #000!imp
 <div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
 <script>
 /* برای گذاشتن عکس: آدرس عکس را در img بنویسید، مثلاً "images/pizza.jpg". قیمت را هم در price بنویسید. */
-const SECTIONS = {"r": {"name": "رستوران", "icon": "🍽️", "menu": [{"name": "صبحانه و برانچ", "icon": "🍳", "img": "", "note": "", "items": [{"name": "کروسان نوتلا و موز", "desc": "", "price": "۳۸۰٬۰۰۰", "img": "", "active": true}, {"name": "چاپاتا با تخم مرغ", "desc": "", "price": "۴۵۰٬۰۰۰", "img": "", "active": true}]}, {"name": "پیش‌غذا", "icon": "🍟", "img": "", "note": "", "items": [{"name": "فرایز", "desc": "سیب‌زمینی، سس رنچ، ادویه سیب زمینی", "price": "۵۵۰٬۰۰۰", "img": "", "active": true}, {"name": "فرایز با بیکن و دیپ چدار", "desc": "", "price": "۷۰۰٬۰۰۰", "img": "", "active": true}, {"name": "اسپرینگ رول گوشت", "desc": "با سس زاتزیکی و چیلی تای", "price": "۹۲۰٬۰۰۰", "img": "", "active": true}, {"name": "اسپرینگ رول مرغ و اسفناج", "desc": "با سس زاتزیکی و چیلی تای", "price": "۸۲۰٬۰۰۰", "img": "", "active": true}]}, {"name": "سالاد", "icon": "🥗", "img": "", "note": "", "items": [{"name": "سالاد سزار با مرغ گریل", "desc": "کاهو پیچ، سینه مرغ گریل، سس سزار، پنیر پارمزان، نان کروتان، زیتون", "price": "۹۰۰٬۰۰۰", "img": "", "active": true}, {"name": "سالاد فارم", "desc": "کاهو پیچ، سینه مرغ سوخاری، میوه فصل، سس پنیر و ریحان", "price": "۱٬۱۵۰٬۰۰۰", "img": "", "active": false}]}, {"name": "پلیت", "icon": "🥩", "img": "", "note": "", "items": [{"name": "استیک مرغ", "desc": "۲۵۰ گرم، به همراه پوره سیب‌زمینی و سبزیجات", "price": "۱٬۳۵۰٬۰۰۰", "img": "", "active": true}, {"name": "فیله استیک", "desc": "۲۵۰ گرم، به همراه پوره سیب‌زمینی و سبزیجات", "price": "۲٬۴۵۰٬۰۰۰", "img": "", "active": true}, {"name": "بشقاب زبان", "desc": "به همراه پوره سیب‌زمینی و سبزیجات", "price": "", "img": "", "active": false}, {"name": "بشقاب سوسیس گریل", "desc": "سوسیس دست ساز گریل شده به همراه پوره سیب زمینی و سس گریوی و قارچ", "price": "", "img": "", "active": false}]}, {"name": "پیتزا", "icon": "🍕", "img": "", "note": "", "items": [{"name": "پیتزا سیر و استیک", "desc": "سس بیانکا، اسلایس گوشت، پیاز، زیتون، روکولا، سس سیر", "price": "۱٬۷۲۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا نوستالژی", "desc": "سس مارینارا، بیکن، بوقلمون، سس چوریتزو، فلفل دلمه‌ای، قارچ، سس چدارویلی", "price": "۱٬۵۰۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا بیکن و قارچ", "desc": "سس مارینارا، بیکن، قارچ، پنیر پارمزان", "price": "۱٬۵۵۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا چیکن آلفردو", "desc": "سس آلفردو، قارچ، سینه مرغ، چیپس دست‌ساز، پارمزان", "price": "۱٬۴۰۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا پولدبیف", "desc": "سس بیانکا، گوشت آرام پز شده، چیپس دست‌ساز، گوجه خشک طعم دار شده، پارمزان", "price": "۱٬۷۲۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا چیکن پستو", "desc": "کرم پستو، سینه مرغ، قارچ، ریحان ایتالیایی، پنیر پارمزان", "price": "۱٬۴۵۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا پپرونی", "desc": "اسلایس پپرونی، سس مارینارا، فلفل هالوپینو، سس چیلی پاپریکا", "price": "۱٬۴۰۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا کپرزه", "desc": "سس مارینارا، سس پستو، زیتون ایتالیایی، گوجه چری، روغن زیتون", "price": "۱٬۱۰۰٬۰۰۰", "img": "", "active": true}]}, {"name": "برگر و ساندویچ", "icon": "🍔", "img": "", "note": "ساید همه ساندویچ و برگرها سیب زمینی و سس سرو میشود", "items": [{"name": "برگر اورجینال", "desc": "نان برگر، سس، کاهو، پنیر چدار، ۱۵۰ گرم گوشت برگر، پیکل خیار", "price": "۱٬۲۵۰٬۰۰۰", "img": "", "active": true}, {"name": "برگر بیکن جم", "desc": "نان برگر، ۱۵۰ گرم گوشت برگر، کاهو، پیکل خیار، مربای بیکن", "price": "", "img": "", "active": false}, {"name": "پولد بیف برگر", "desc": "نان برگر، ۱۵۰ گرم گوشت برگر، کاهو، پیکل خیار، سس، پنیر چدار، گوشت آرام پز شده، پیاز کاراملی", "price": "۱٬۴۰۰٬۰۰۰", "img": "", "active": true}, {"name": "برگر کوبایی", "desc": "نان برگر، ۱۵۰ گرم گوشت برگر، کاهو، پیکل خیار، چیپس دست ساز، پنیر چدار تند، فلفل هالوپینو", "price": "۱٬۵۰۰٬۰۰۰", "img": "", "active": true}, {"name": "ساندویچ مرغ و بادمجان", "desc": "سینه مرغ گریل، دیپ بادمجان، پنیر ورقه‌ای چدار", "price": "۱٬۲۰۰٬۰۰۰", "img": "", "active": false}, {"name": "ساندویچ مرغ پستو", "desc": "سینه مرغ گریل، سس پستو، گوجه خشک", "price": "۱٬۳۰۰٬۰۰۰", "img": "", "active": false}, {"name": "ساندویچ زبان", "desc": "", "price": "", "img": "", "active": false}, {"name": "ساندویچ پولدبیف با پیاز کاراملی", "desc": "گوشت آرام پز شده، پیکل پیاز، پیکل خیار، پیاز کاراملی، پنیر ورقه‌ای چدار", "price": "", "img": "", "active": false}, {"name": "دوبل برگر", "desc": "", "price": "۱٬۷۰۰٬۰۰۰", "img": "", "active": true, "sort": 35}]}, {"name": "پاستا", "icon": "🍝", "img": "", "note": "", "items": [{"name": "پاستا آلفردو", "desc": "با سینه مرغ گریل", "price": "۱٬۱۰۰٬۰۰۰", "img": "", "active": true}, {"name": "پاستا فونگی", "desc": "با سینه مرغ سوخاری", "price": "۱٬۲۰۰٬۰۰۰", "img": "", "active": true}, {"name": "پاستا چیکن پستو", "desc": "با مرغ گریل", "price": "۱٬۱۰۰٬۰۰۰", "img": "", "active": true}, {"name": "پاستا توسکانی", "desc": "با فیله استیک", "price": "", "img": "", "active": false}]}, {"name": "ایرانی", "icon": "🍛", "img": "", "note": "", "items": [{"name": "کته استیک با سس سماق", "desc": "", "price": "۲٬۸۰۰٬۰۰۰", "img": "", "active": false}, {"name": "کته تابه‌ای", "desc": "", "price": "۱٬۴۸۰٬۰۰۰", "img": "", "active": false}, {"name": "زرشک پلو با برنج کته‌ای با ران مرغ", "desc": "", "price": "۱٬۰۶۰٬۰۰۰", "img": "", "active": false}, {"name": "مرغ مشهدی با برنج کته‌ای", "desc": "", "price": "۱٬۱۰۰٬۰۰۰", "img": "", "active": true}, {"name": "ماهیچه شاندیزی", "desc": "", "price": "", "img": "", "active": false}]}, {"name": "چلو", "icon": "🍚", "img": "", "note": "", "items": [{"name": "شوید باقالی پلو", "desc": "", "price": "", "img": "", "active": false}, {"name": "آلبالو پلو", "desc": "", "price": "", "img": "", "active": false}, {"name": "چلو کره", "desc": "", "price": "۴۰۰٬۰۰۰", "img": "", "active": true}]}, {"name": "کباب", "icon": "<svg viewBox=\"0 0 64 64\" width=\"1.5em\" height=\"1.5em\" style=\"display:block\"><g transform=\"rotate(-35 32 32)\"><rect x=\"2\" y=\"30.5\" width=\"60\" height=\"3\" rx=\"1.5\" fill=\"#cfd3d6\"/><rect x=\"54\" y=\"28\" width=\"9\" height=\"8\" rx=\"2\" fill=\"#8a5a2b\"/><rect x=\"7\" y=\"23\" width=\"10\" height=\"18\" rx=\"4\" fill=\"#8b3f1f\"/><rect x=\"9\" y=\"25\" width=\"3\" height=\"6\" rx=\"1.5\" fill=\"#b8642f\"/><circle cx=\"22.5\" cy=\"32\" r=\"6.5\" fill=\"#e53935\"/><circle cx=\"20.5\" cy=\"29.5\" r=\"1.8\" fill=\"#ff8a80\"/><rect x=\"28\" y=\"23\" width=\"10\" height=\"18\" rx=\"4\" fill=\"#8b3f1f\"/><rect x=\"30\" y=\"25\" width=\"3\" height=\"6\" rx=\"1.5\" fill=\"#b8642f\"/><rect x=\"40\" y=\"24\" width=\"5\" height=\"16\" rx=\"2.5\" fill=\"#43a047\"/><rect x=\"46\" y=\"23\" width=\"9\" height=\"18\" rx=\"4\" fill=\"#8b3f1f\"/><rect x=\"48\" y=\"25\" width=\"3\" height=\"6\" rx=\"1.5\" fill=\"#b8642f\"/></g></svg>", "img": "", "note": "", "items": [{"name": "جوجه کباب مدیترانه‌ای", "desc": "ران مرغ بدون استخوان مرینیت شده با ادویه مدیترانه‌ای", "price": "۱٬۳۲۰٬۰۰۰", "img": "", "active": false}, {"name": "جوجه زعفرانی با کته", "desc": "فیله مرغ زعفرانی", "price": "۱٬۱۸۰٬۰۰۰", "img": "", "active": false}, {"name": "لم‌چاپس با سس کره لیمو", "desc": "", "price": "", "img": "", "active": false}]}, {"name": "نوشیدنی سرد", "icon": "🍹", "img": "", "note": "", "itemsFrom": "c|2"}]}, "c": {"name": "کافه", "icon": "☕", "menu": [{"name": "بر پایه قهوه", "icon": "☕", "img": "", "note": "", "items": [{"name": "اسپرسو", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۲۸۰٬۰۰۰", "img": "", "active": true}, {"name": "امریکانو", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۳۰۰٬۰۰۰", "img": "", "active": true}, {"name": "لاته", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "کارامل ماکیاتو", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۵۰٬۰۰۰", "img": "", "active": true}, {"name": "موکا", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۵۰٬۰۰۰", "img": "", "active": true}, {"name": "فراپاچینو", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۶۰۰٬۰۰۰", "img": "", "active": false}, {"name": "کورتادو", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "کوکونات لاته", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "آیس ماچا", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۵۰٬۰۰۰", "img": "", "active": true}, {"name": "آیس امریکانو", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۳۰۰٬۰۰۰", "img": "", "active": true}, {"name": "آیس لاته", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "آیس کارامل", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۵۰٬۰۰۰", "img": "", "active": true}, {"name": "آیس موکا", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۵۰٬۰۰۰", "img": "", "active": true}]}, {"name": "نوشیدنی گرم", "icon": "🍵", "img": "", "note": "", "items": [{"name": "چای سیاه", "desc": "", "price": "۱۵۰٬۰۰۰", "img": "", "active": true}, {"name": "چای کرک", "desc": "", "price": "۳۵۰٬۰۰۰", "img": "", "active": true}, {"name": "چای ماسالا", "desc": "", "price": "۳۵۰٬۰۰۰", "img": "", "active": true}, {"name": "اسپرولینا", "desc": "", "price": "۳۸۰٬۰۰۰", "img": "", "active": true}, {"name": "هات چاکلت", "desc": "", "price": "۳۵۰٬۰۰۰", "img": "", "active": true}, {"name": "شیر عسل دارچین", "desc": "", "price": "۳۵۰٬۰۰۰", "img": "", "active": true}, {"name": "ماچا لاته", "desc": "", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "چای ماچا", "desc": "", "price": "۳۵۰٬۰۰۰", "img": "", "active": true}]}, {"name": "نوشیدنی سرد", "icon": "🍹", "img": "", "note": "", "items": [{"name": "لیموناد", "desc": "", "price": "۳۶۰٬۰۰۰", "img": "", "active": true}, {"name": "موهیتو", "desc": "", "price": "۳۸۰٬۰۰۰", "img": "", "active": true}, {"name": "بلوپارادایس", "desc": "", "price": "۳۷۰٬۰۰۰", "img": "", "active": true}, {"name": "اورنج بری", "desc": "", "price": "۴۳۰٬۰۰۰", "img": "", "active": true}, {"name": "افتر ایت", "desc": "", "price": "", "img": "", "active": false}, {"name": "کوکو بری", "desc": "", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "جینجر لیموناد", "desc": "", "price": "", "img": "", "active": false}, {"name": "جینجر اسپایسی لمون", "desc": "", "price": "", "img": "", "active": false}, {"name": "رابی چری", "desc": "", "price": "", "img": "", "active": false}, {"name": "جینجر شات", "desc": "", "price": "۲۲۰٬۰۰۰", "img": "", "active": true}, {"name": "آب معدنی", "desc": "", "price": "۳۰٬۰۰۰", "img": "", "active": true}]}, {"name": "کیک", "icon": "🍰", "img": "", "note": "", "items": [{"name": "کیک شکلاتی", "desc": "", "price": "۳۰۰٬۰۰۰", "img": "", "active": true}, {"name": "چیز کیک سن سباستین", "desc": "", "price": "۳۶۰٬۰۰۰", "img": "", "active": true}, {"name": "کوکی شکلاتی", "desc": "", "price": "۲۵۰٬۰۰۰", "img": "", "active": true}, {"name": "کوکی کره‌ای با پرک بادام", "desc": "", "price": "۳۳۰٬۰۰۰", "img": "", "active": true}, {"name": "کوکی پسته", "desc": "", "price": "۳۳۰٬۰۰۰", "img": "", "active": true}]}]}};
+const SECTIONS = {"r": {"name": "رستوران", "icon": "🍽️", "menu": [{"name": "صبحانه و برانچ", "icon": "🍳", "img": "", "note": "", "items": [{"name": "کروسان نوتلا و موز", "desc": "", "price": "۳۸۰٬۰۰۰", "img": "", "active": true}, {"name": "چاپاتا با تخم مرغ", "desc": "", "price": "۴۵۰٬۰۰۰", "img": "", "active": true}]}, {"name": "پیش‌غذا", "icon": "🍟", "img": "", "note": "", "items": [{"name": "فرایز", "desc": "سیب‌زمینی، سس رنچ، ادویه سیب زمینی", "price": "۵۵۰٬۰۰۰", "img": "", "active": true}, {"name": "فرایز با بیکن و دیپ چدار", "desc": "", "price": "۷۰۰٬۰۰۰", "img": "", "active": true}, {"name": "اسپرینگ رول گوشت", "desc": "با سس زاتزیکی و چیلی تای", "price": "۹۲۰٬۰۰۰", "img": "", "active": true}, {"name": "اسپرینگ رول مرغ و اسفناج", "desc": "با سس زاتزیکی و چیلی تای", "price": "۸۲۰٬۰۰۰", "img": "", "active": true}]}, {"name": "سالاد", "icon": "🥗", "img": "", "note": "", "items": [{"name": "سالاد سزار با مرغ گریل", "desc": "کاهو پیچ، سینه مرغ گریل، سس سزار، پنیر پارمزان، نان کروتان، زیتون", "price": "۹۰۰٬۰۰۰", "img": "", "active": true}, {"name": "سالاد فارم", "desc": "کاهو پیچ، سینه مرغ سوخاری، میوه فصل، سس پنیر و ریحان", "price": "۱٬۱۵۰٬۰۰۰", "img": "", "active": false}]}, {"name": "پلیت", "icon": "🥩", "img": "", "note": "", "items": [{"name": "استیک مرغ", "desc": "۲۵۰ گرم، به همراه پوره سیب‌زمینی و سبزیجات", "price": "۱٬۳۵۰٬۰۰۰", "img": "", "active": true}, {"name": "فیله استیک", "desc": "۲۵۰ گرم، به همراه پوره سیب‌زمینی و سبزیجات", "price": "۲٬۴۵۰٬۰۰۰", "img": "", "active": true}, {"name": "بشقاب زبان", "desc": "به همراه پوره سیب‌زمینی و سبزیجات", "price": "", "img": "", "active": false}, {"name": "بشقاب سوسیس گریل", "desc": "سوسیس دست ساز گریل شده به همراه پوره سیب زمینی و سس گریوی و قارچ", "price": "", "img": "", "active": false}]}, {"name": "پیتزا", "icon": "🍕", "img": "", "note": "", "items": [{"name": "پیتزا سیر و استیک", "desc": "سس بیانکا، اسلایس گوشت، پیاز، زیتون، روکولا، سس سیر", "price": "۱٬۷۲۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا نوستالژی", "desc": "سس مارینارا، بیکن، بوقلمون، سس چوریتزو، فلفل دلمه‌ای، قارچ، سس چدارویلی", "price": "۱٬۵۰۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا بیکن و قارچ", "desc": "سس مارینارا، بیکن، قارچ، پنیر پارمزان", "price": "۱٬۵۵۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا چیکن آلفردو", "desc": "سس آلفردو، قارچ، سینه مرغ، چیپس دست‌ساز، پارمزان", "price": "۱٬۴۰۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا پولدبیف", "desc": "سس بیانکا، گوشت آرام پز شده، چیپس دست‌ساز، گوجه خشک طعم دار شده، پارمزان", "price": "۱٬۷۲۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا چیکن پستو", "desc": "کرم پستو، سینه مرغ، قارچ، ریحان ایتالیایی، پنیر پارمزان", "price": "۱٬۴۵۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا پپرونی", "desc": "اسلایس پپرونی، سس مارینارا، فلفل هالوپینو، سس چیلی پاپریکا", "price": "۱٬۴۰۰٬۰۰۰", "img": "", "active": true}, {"name": "پیتزا کپرزه", "desc": "سس مارینارا، سس پستو، زیتون ایتالیایی، گوجه چری، روغن زیتون", "price": "۱٬۱۰۰٬۰۰۰", "img": "", "active": true}]}, {"name": "برگر و ساندویچ", "icon": "🍔", "img": "", "note": "ساید همه ساندویچ و برگرها سیب زمینی و سس سرو میشود", "items": [{"name": "برگر اورجینال", "desc": "نان برگر، سس، کاهو، پنیر چدار، ۱۵۰ گرم گوشت برگر، پیکل خیار", "price": "۱٬۲۵۰٬۰۰۰", "img": "", "active": true}, {"name": "برگر بیکن جم", "desc": "نان برگر، ۱۵۰ گرم گوشت برگر، کاهو، پیکل خیار، مربای بیکن", "price": "", "img": "", "active": false}, {"name": "پولد بیف برگر", "desc": "نان برگر، ۱۵۰ گرم گوشت برگر، کاهو، پیکل خیار، سس، پنیر چدار، گوشت آرام پز شده، پیاز کاراملی", "price": "۱٬۴۰۰٬۰۰۰", "img": "", "active": true}, {"name": "برگر کوبایی", "desc": "نان برگر، ۱۵۰ گرم گوشت برگر، کاهو، پیکل خیار، چیپس دست ساز، پنیر چدار تند، فلفل هالوپینو", "price": "۱٬۵۰۰٬۰۰۰", "img": "", "active": true}, {"name": "ساندویچ مرغ و بادمجان", "desc": "سینه مرغ گریل، دیپ بادمجان، پنیر ورقه‌ای چدار", "price": "۱٬۲۰۰٬۰۰۰", "img": "", "active": false}, {"name": "ساندویچ مرغ پستو", "desc": "سینه مرغ گریل، سس پستو، گوجه خشک", "price": "۱٬۳۰۰٬۰۰۰", "img": "", "active": false}, {"name": "ساندویچ زبان", "desc": "", "price": "", "img": "", "active": false}, {"name": "ساندویچ پولدبیف با پیاز کاراملی", "desc": "گوشت آرام پز شده، پیکل پیاز، پیکل خیار، پیاز کاراملی، پنیر ورقه‌ای چدار", "price": "", "img": "", "active": false}, {"name": "دوبل برگر", "desc": "", "price": "۱٬۷۰۰٬۰۰۰", "img": "", "active": true, "sort": 35}]}, {"name": "پاستا", "icon": "🍝", "img": "", "note": "", "items": [{"name": "پاستا آلفردو", "desc": "با سینه مرغ گریل", "price": "۱٬۱۰۰٬۰۰۰", "img": "", "active": true}, {"name": "پاستا فونگی", "desc": "با سینه مرغ سوخاری", "price": "۱٬۲۰۰٬۰۰۰", "img": "", "active": true}, {"name": "پاستا چیکن پستو", "desc": "با مرغ گریل", "price": "۱٬۱۰۰٬۰۰۰", "img": "", "active": true}, {"name": "پاستا توسکانی", "desc": "با فیله استیک", "price": "", "img": "", "active": false}]}, {"name": "ایرانی", "icon": "🍛", "img": "", "note": "", "items": [{"name": "کته استیک با سس سماق", "desc": "", "price": "۲٬۸۰۰٬۰۰۰", "img": "", "active": false}, {"name": "کته تابه‌ای", "desc": "", "price": "۱٬۴۸۰٬۰۰۰", "img": "", "active": false}, {"name": "زرشک پلو با برنج کته‌ای با ران مرغ", "desc": "", "price": "۱٬۰۶۰٬۰۰۰", "img": "", "active": false}, {"name": "مرغ مشهدی با برنج کته‌ای", "desc": "", "price": "۱٬۱۰۰٬۰۰۰", "img": "", "active": true}, {"name": "ماهیچه شاندیزی", "desc": "", "price": "", "img": "", "active": false}]}, {"name": "چلو", "icon": "🍚", "img": "", "note": "", "items": [{"name": "شوید باقالی پلو", "desc": "", "price": "", "img": "", "active": false}, {"name": "آلبالو پلو", "desc": "", "price": "", "img": "", "active": false}, {"name": "چلو کره", "desc": "", "price": "۴۰۰٬۰۰۰", "img": "", "active": true}]}, {"name": "کباب", "icon": "<svg viewBox=\"0 0 64 64\" width=\"1.5em\" height=\"1.5em\" style=\"display:block\"><g transform=\"rotate(-35 32 32)\"><rect x=\"2\" y=\"30.5\" width=\"60\" height=\"3\" rx=\"1.5\" fill=\"#cfd3d6\"/><rect x=\"54\" y=\"28\" width=\"9\" height=\"8\" rx=\"2\" fill=\"#8a5a2b\"/><rect x=\"7\" y=\"23\" width=\"10\" height=\"18\" rx=\"4\" fill=\"#8b3f1f\"/><rect x=\"9\" y=\"25\" width=\"3\" height=\"6\" rx=\"1.5\" fill=\"#b8642f\"/><circle cx=\"22.5\" cy=\"32\" r=\"6.5\" fill=\"#e53935\"/><circle cx=\"20.5\" cy=\"29.5\" r=\"1.8\" fill=\"#ff8a80\"/><rect x=\"28\" y=\"23\" width=\"10\" height=\"18\" rx=\"4\" fill=\"#8b3f1f\"/><rect x=\"30\" y=\"25\" width=\"3\" height=\"6\" rx=\"1.5\" fill=\"#b8642f\"/><rect x=\"40\" y=\"24\" width=\"5\" height=\"16\" rx=\"2.5\" fill=\"#43a047\"/><rect x=\"46\" y=\"23\" width=\"9\" height=\"18\" rx=\"4\" fill=\"#8b3f1f\"/><rect x=\"48\" y=\"25\" width=\"3\" height=\"6\" rx=\"1.5\" fill=\"#b8642f\"/></g></svg>", "img": "", "note": "", "items": [{"name": "جوجه کباب مدیترانه‌ای", "desc": "ران مرغ بدون استخوان مرینیت شده با ادویه مدیترانه‌ای", "price": "۱٬۳۲۰٬۰۰۰", "img": "", "active": false}, {"name": "جوجه زعفرانی با کته", "desc": "فیله مرغ زعفرانی", "price": "۱٬۱۸۰٬۰۰۰", "img": "", "active": false}, {"name": "لم‌چاپس با سس کره لیمو", "desc": "", "price": "", "img": "", "active": false}]}, {"name": "نوشیدنی سرد", "icon": "🍹", "img": "", "note": "", "itemsFrom": "c|2"}]}, "c": {"name": "کافه", "icon": "☕", "menu": [{"name": "بر پایه قهوه", "icon": "☕", "img": "", "note": "", "items": [{"name": "اسپرسو", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۲۸۰٬۰۰۰", "img": "", "active": true}, {"name": "امریکانو", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۳۰۰٬۰۰۰", "img": "", "active": true}, {"name": "لاته", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "کاپوچینو", "desc": "", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "کارامل ماکیاتو", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۵۰٬۰۰۰", "img": "", "active": true}, {"name": "موکا", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۵۰٬۰۰۰", "img": "", "active": true}, {"name": "فراپاچینو", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۶۰۰٬۰۰۰", "img": "", "active": false}, {"name": "کورتادو", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "کوکونات لاته", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "آیس ماچا", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۵۰٬۰۰۰", "img": "", "active": true}, {"name": "آیس امریکانو", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۳۰۰٬۰۰۰", "img": "", "active": true}, {"name": "آیس لاته", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "آیس کارامل", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۵۰٬۰۰۰", "img": "", "active": true}, {"name": "آیس موکا", "desc": "امکان اضافه کردن سیروپ دلخواه", "price": "۴۵۰٬۰۰۰", "img": "", "active": true}]}, {"name": "نوشیدنی گرم", "icon": "🍵", "img": "", "note": "", "items": [{"name": "چای سیاه", "desc": "", "price": "۱۵۰٬۰۰۰", "img": "", "active": true}, {"name": "چای کرک", "desc": "", "price": "۳۵۰٬۰۰۰", "img": "", "active": true}, {"name": "چای ماسالا", "desc": "", "price": "۳۵۰٬۰۰۰", "img": "", "active": true}, {"name": "اسپرولینا", "desc": "", "price": "۳۸۰٬۰۰۰", "img": "", "active": true}, {"name": "هات چاکلت", "desc": "", "price": "۳۵۰٬۰۰۰", "img": "", "active": true}, {"name": "شیر عسل دارچین", "desc": "", "price": "۳۵۰٬۰۰۰", "img": "", "active": true}, {"name": "ماچا لاته", "desc": "", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "چای ماچا", "desc": "", "price": "۳۵۰٬۰۰۰", "img": "", "active": true}, {"name": "دمنوش زنجبیلی", "desc": "", "price": "۳۰۰٬۰۰۰", "img": "", "active": true}]}, {"name": "نوشیدنی سرد", "icon": "🍹", "img": "", "note": "", "items": [{"name": "لیموناد", "desc": "", "price": "۳۶۰٬۰۰۰", "img": "", "active": true}, {"name": "موهیتو", "desc": "", "price": "۳۸۰٬۰۰۰", "img": "", "active": true}, {"name": "بلوپارادایس", "desc": "", "price": "۳۷۰٬۰۰۰", "img": "", "active": true}, {"name": "اورنج بری", "desc": "", "price": "۴۳۰٬۰۰۰", "img": "", "active": true}, {"name": "افتر ایت", "desc": "", "price": "", "img": "", "active": false}, {"name": "کوکو بری", "desc": "", "price": "۴۲۰٬۰۰۰", "img": "", "active": true}, {"name": "جینجر لیموناد", "desc": "", "price": "", "img": "", "active": false}, {"name": "جینجر اسپایسی لمون", "desc": "", "price": "", "img": "", "active": false}, {"name": "رابی چری", "desc": "", "price": "", "img": "", "active": false}, {"name": "جینجر شات", "desc": "", "price": "۲۲۰٬۰۰۰", "img": "", "active": true}, {"name": "آب معدنی", "desc": "", "price": "۳۰٬۰۰۰", "img": "", "active": true}]}, {"name": "کیک", "icon": "🍰", "img": "", "note": "", "items": [{"name": "کیک شکلاتی", "desc": "", "price": "۳۰۰٬۰۰۰", "img": "", "active": true}, {"name": "چیز کیک سن سباستین", "desc": "", "price": "۳۶۰٬۰۰۰", "img": "", "active": true}, {"name": "کوکی شکلاتی", "desc": "", "price": "۲۵۰٬۰۰۰", "img": "", "active": true}, {"name": "کوکی کره‌ای با پرک بادام", "desc": "", "price": "۳۳۰٬۰۰۰", "img": "", "active": true}, {"name": "کوکی پسته", "desc": "", "price": "۳۳۰٬۰۰۰", "img": "", "active": true}, {"name": "کروسان ساده", "desc": "", "price": "۲۶۰٬۰۰۰", "img": "", "active": true}]}]}};
 let MENU=[], SEC='r';
 const ph = e => `<div class="ph">${e}</div>`;
 const pic = (src,e) => src ? `<img src="${src}" alt="" loading="lazy">` : ph(e);
@@ -506,7 +527,7 @@ const RECEIPT={
     titleSize:16,
     headerFill:'FFF2F2F2',
     reportMarginIn:0.5,
-    reportColsInv:[20,36,12,16,14],
+    reportColsInv:[18,32,10,14,16,14],
     reportColsItems:[20,36,10,14,14],
     reportColsTop:[36,10,16]
   }
@@ -656,11 +677,20 @@ async function syncMenuItems(){
     if(typeof prev.active==='boolean') next.active=prev.active;
     return next;
   }
+  function prevFor(baked, byId, byName){
+    const same=byId[baked.id];
+    if(same && same.name===baked.name) return same;
+    if(byName[baked.name]) return byName[baked.name];
+    return null;
+  }
   if(useLS){
     const d=lsInit();
     d.menu_items=d.menu_items||{};
     if(d.meta.menu_ver===ver && Object.keys(d.menu_items).length) return;
-    items.forEach(it=>{ d.menu_items[it.id]=mergeStored(d.menu_items[it.id], it); });
+    const byIdLS=d.menu_items;
+    const byNameLS={};
+    Object.values(byIdLS).forEach(row=>{ if(row&&row.name) byNameLS[row.name]=row; });
+    items.forEach(it=>{ d.menu_items[it.id]=mergeStored(prevFor(it, byIdLS, byNameLS), it); });
     d.meta.menu_ver=ver;
     lsSave(d);
     return;
@@ -687,11 +717,12 @@ async function syncMenuItems(){
     rq.onerror=()=>rej(rq.error);
   });
   const byId={};
-  existingRows.forEach(row=>{ if(row&&row.id) byId[row.id]=row; });
+  const byName={};
+  existingRows.forEach(row=>{ if(row&&row.id) byId[row.id]=row; if(row&&row.name) byName[row.name]=row; });
   await new Promise((res,rej)=>{
     const tx=idb.transaction(['menu_items','meta'],'readwrite');
     const st=tx.objectStore('menu_items');
-    items.forEach(it=>{ st.put(mergeStored(byId[it.id], it)); });
+    items.forEach(it=>{ st.put(mergeStored(prevFor(it, byId, byName), it)); });
     tx.objectStore('meta').put({key:'info', menu_ver:ver});
     tx.oncomplete=()=>res();
     tx.onerror=()=>rej(tx.error);
@@ -1131,61 +1162,231 @@ async function importAllData(data){
 }
 
 /* ---------- Cart ---------- */
+function escHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function parseMoneyInput(s, allowZero){
+  const raw=String(s==null?'':s).trim();
+  if(!raw) return {ok:false, empty:true, value:0};
+  const t=toEn(raw).replace(/[٬,،\s]/g,'');
+  if(!/^\d+$/.test(t)) return {ok:false, empty:false, value:0};
+  const n=parseInt(t,10);
+  if(isNaN(n) || n<0) return {ok:false, empty:false, value:0};
+  if(!allowZero && n===0) return {ok:false, empty:false, value:0};
+  return {ok:true, empty:false, value:n};
+}
+function invoiceDiscount(inv){
+  if(!inv || inv.discount==null || inv.discount==='') return 0;
+  const n=Number(inv.discount);
+  return isFinite(n)&&n>0?n:0;
+}
+function invoiceSubtotal(inv, items){
+  if(inv && inv.subtotal!=null && inv.subtotal!==''){
+    const n=Number(inv.subtotal);
+    if(isFinite(n)) return n;
+  }
+  const sum=(items||[]).reduce((s,it)=>s+(Number(it.line_total)||0),0);
+  if(sum) return sum;
+  if(inv && inv.total!=null) return Number(inv.total)||0;
+  return 0;
+}
+function invoicePayable(inv, items){
+  const disc=invoiceDiscount(inv);
+  if(inv && (inv.subtotal==null||inv.subtotal==='') && !disc && inv.total!=null) return Number(inv.total)||0;
+  return Math.max(0, invoiceSubtotal(inv, items)-disc);
+}
+function isManualId(id){return String(id||'').startsWith('manual|');}
+function isManualItem(it){
+  if(!it) return false;
+  if(it.manual) return true;
+  return isManualId(it.item_id)||isManualId(it.id);
+}
+function adminManualLabel(){return 'آیتم خارج از منو';}
+function adminItemLabel(it){
+  const n=String(it&&it.name||'');
+  return isManualItem(it)?(n+' ('+adminManualLabel()+')'):n;
+}
+function emptyCart(table){return {items:{}, table:table||'', manuals:[], manualSeq:0, discount:0};}
+function normalizeCart(c){
+  if(!c||typeof c!=='object') return emptyCart('');
+  const manuals=Array.isArray(c.manuals)?c.manuals.map(m=>({
+    id:m.id, name:String(m.name||''), price:Number(m.price)||0, qty:Number(m.qty)||0
+  })).filter(m=>m.id&&m.name&&m.qty>0):[];
+  return {
+    items:(c.items&&typeof c.items==='object')?c.items:{},
+    table:c.table||'',
+    manuals,
+    manualSeq:Number(c.manualSeq)||0,
+    discount:Math.max(0, Number(c.discount)||0)
+  };
+}
 function loadCart(){
   try{
     const c=JSON.parse(localStorage.getItem(CART_KEY)||'');
-    if(c&&typeof c==='object') return {items:c.items||{}, table:c.table||''};
+    if(c&&typeof c==='object') return normalizeCart(c);
   }catch(e){}
-  return {items:{}, table:''};
+  return emptyCart('');
 }
-function saveCart(c){localStorage.setItem(CART_KEY, JSON.stringify(c));}
+function saveCart(c){localStorage.setItem(CART_KEY, JSON.stringify(normalizeCart(c)));}
 function cart(){return loadCart();}
 function itemRef(id){
+  if(isManualId(id)){
+    const m=(loadCart().manuals||[]).find(x=>x.id===id);
+    if(!m) return null;
+    return {id, name:m.name, price:m.price, has_price:true, priceLabel:fmtPrice(m.price), active:true, cat:'آیتم خارج از منو', section:'', manual:true};
+  }
   const [sk,ci,ii]=id.split('|');
   const sec=SECTIONS[sk]; if(!sec) return null;
   const cat=sec.menu[+ci]; if(!cat) return null;
-  const it=cat.items[+ii]; if(!it) return null;
+  const list=cat.itemsFrom?((typeof catItemList==='function'?catItemList(cat):cat.items)||[]):(cat.items||[]);
+  const it=list[+ii]; if(!it) return null;
   return {id, sk, ci:+ci, ii:+ii, name:it.name, price:parsePrice(it.price), has_price:!!(it.price&&String(it.price).trim()), priceLabel:it.price||'', active:it.active!==false, cat:cat.name, section:sec.name};
 }
-function cartQty(id){return loadCart().items[id]||0;}
-function cartCount(){return Object.values(loadCart().items).reduce((a,b)=>a+b,0);}
+function cartQty(id){
+  if(isManualId(id)){
+    const m=(loadCart().manuals||[]).find(x=>x.id===id);
+    return m?(m.qty||0):0;
+  }
+  return loadCart().items[id]||0;
+}
+function cartCount(){
+  const c=loadCart();
+  return Object.values(c.items||{}).reduce((a,b)=>a+b,0)+(c.manuals||[]).reduce((a,m)=>a+(m.qty||0),0);
+}
+function afterCartChange(){
+  refreshQtyUI();
+  if(document.getElementById('invPanel')?.classList.contains('open') && !invViewNo) renderInvoice();
+}
 function cartAdd(id){
   if(!adminOn()) return;
+  if(isManualId(id)){
+    const c=loadCart();
+    const m=(c.manuals||[]).find(x=>x.id===id);
+    if(!m) return;
+    m.qty=(m.qty||0)+1;
+    saveCart(c); afterCartChange();
+    return;
+  }
   const ref=itemRef(id); if(!ref||!ref.active) return;
   const c=loadCart();
   c.items[id]=(c.items[id]||0)+1;
-  saveCart(c); refreshQtyUI();
-  if(document.getElementById('invPanel')?.classList.contains('open') && !invViewNo) renderInvoice();
+  saveCart(c); afterCartChange();
 }
 function cartDec(id){
   if(!adminOn()) return;
   const c=loadCart();
+  if(isManualId(id)){
+    const m=(c.manuals||[]).find(x=>x.id===id);
+    if(!m) return;
+    m.qty=(m.qty||0)-1;
+    if(m.qty<=0) c.manuals=c.manuals.filter(x=>x.id!==id);
+    saveCart(c); afterCartChange();
+    return;
+  }
   if(!c.items[id]) return;
   c.items[id]--;
   if(c.items[id]<=0) delete c.items[id];
-  saveCart(c); refreshQtyUI();
-  if(document.getElementById('invPanel')?.classList.contains('open') && !invViewNo) renderInvoice();
+  saveCart(c); afterCartChange();
 }
 function cartRemove(id){
   const c=loadCart();
-  delete c.items[id];
-  saveCart(c); refreshQtyUI();
-  if(document.getElementById('invPanel')?.classList.contains('open') && !invViewNo) renderInvoice();
+  if(isManualId(id)) c.manuals=(c.manuals||[]).filter(x=>x.id!==id);
+  else delete c.items[id];
+  saveCart(c); afterCartChange();
 }
 function cartClear(){
   const t=loadCart().table;
-  saveCart({items:{}, table:t||''});
+  saveCart(emptyCart(t||''));
   refreshQtyUI();
 }
 function cartLines(){
   const c=loadCart();
-  return Object.entries(c.items).map(([id,qty])=>{
+  const menu=Object.entries(c.items||{}).map(([id,qty])=>{
     const ref=itemRef(id); if(!ref) return null;
     const unit=ref.has_price?ref.price:0;
     return {...ref, qty, unit, line:unit*qty};
   }).filter(Boolean);
+  const manuals=(c.manuals||[]).map(m=>{
+    const qty=m.qty||0; if(!qty) return null;
+    const unit=m.price||0;
+    return {id:m.id, name:m.name, price:unit, has_price:true, priceLabel:fmtPrice(unit), active:true, cat:'آیتم خارج از منو', section:'', manual:true, qty, unit, line:unit*qty};
+  }).filter(Boolean);
+  return menu.concat(manuals);
 }
-function cartTotal(){return cartLines().reduce((s,l)=>s+l.line,0);}
+function cartSubtotal(){return cartLines().reduce((s,l)=>s+l.line,0);}
+function cartDiscount(){
+  const d=Math.max(0, Number(loadCart().discount)||0);
+  return Math.min(d, cartSubtotal());
+}
+function cartTotal(){return Math.max(0, cartSubtotal()-cartDiscount());}
+function addManualItem(){
+  if(!adminOn()) return;
+  const nameEl=document.getElementById('manualName');
+  const priceEl=document.getElementById('manualPrice');
+  const qtyEl=document.getElementById('manualQty');
+  const err=document.getElementById('manualErr');
+  const show=msg=>{ if(err){ err.hidden=!msg; err.textContent=msg||''; } };
+  const name=(nameEl?.value||'').trim();
+  if(!name){ show('نام آیتم را وارد کنید'); nameEl&&nameEl.focus(); return; }
+  const p=parseMoneyInput(priceEl?.value, false);
+  if(!p.ok){ show(p.empty?'قیمت را وارد کنید':'قیمت باید یک عدد مثبت باشد'); priceEl&&priceEl.focus(); return; }
+  let qty=1;
+  if(String(qtyEl?.value||'').trim()){
+    const q=parseMoneyInput(qtyEl.value, false);
+    if(!q.ok){ show('تعداد باید یک عدد مثبت باشد'); qtyEl&&qtyEl.focus(); return; }
+    qty=q.value;
+  }
+  const c=loadCart();
+  c.manuals=c.manuals||[];
+  const existing=c.manuals.find(m=>m.name===name && m.price===p.value);
+  if(existing) existing.qty=(existing.qty||0)+qty;
+  else {
+    c.manualSeq=(c.manualSeq||0)+1;
+    c.manuals.push({id:'manual|'+c.manualSeq, name, price:p.value, qty});
+  }
+  saveCart(c);
+  show('');
+  afterCartChange();
+}
+function onDiscountInput(el){
+  const err=document.getElementById('discErr');
+  const box=document.getElementById('invTotals');
+  const raw=el?el.value:'';
+  const parsed=parseMoneyInput(raw, true);
+  if(String(raw).trim() && !parsed.ok){
+    if(err){ err.hidden=false; err.textContent='مبلغ تخفیف نامعتبر است'; }
+    if(box) box.classList.add('bad-disc');
+    return;
+  }
+  const sub=cartSubtotal();
+  const val=parsed.ok?parsed.value:0;
+  if(val>sub){
+    if(err){ err.hidden=false; err.textContent='تخفیف نمی‌تواند بیشتر از جمع فاکتور باشد'; }
+    if(box) box.classList.add('bad-disc');
+    return;
+  }
+  if(err) err.hidden=true;
+  if(box) box.classList.remove('bad-disc');
+  const c=loadCart();
+  c.discount=val;
+  saveCart(c);
+  const subEl=document.getElementById('invSubtotalVal');
+  const payEl=document.getElementById('invPayableVal');
+  if(subEl) subEl.textContent=fmtPrice(sub)+' تومان';
+  if(payEl) payEl.textContent=fmtPrice(Math.max(0, sub-val))+' تومان';
+}
+function onDiscountBlur(el){
+  onDiscountInput(el);
+  const parsed=parseMoneyInput(el?el.value:'', true);
+  const sub=cartSubtotal();
+  if(!parsed.ok || parsed.value>sub){
+    if(el) el.value=loadCart().discount?toFa(loadCart().discount):'';
+    const err=document.getElementById('discErr');
+    const box=document.getElementById('invTotals');
+    if(err) err.hidden=true;
+    if(box) box.classList.remove('bad-disc');
+  }
+}
 
 function qtyWidget(id, lg){
   const n=cartQty(id);
@@ -1328,32 +1529,40 @@ function fillInvoiceSheet(ws, inv, items){
   let r=8;
   items.forEach(it=>{
     const row=ws.getRow(r);
-    const long=String(it.name||'').length>24;
+    const label=adminItemLabel(it);
+    const long=String(label).length>24;
     row.height=long?28:RECEIPT.excel.rowPt;
-    const name=row.getCell(1); name.value=it.name||''; styleTableCell(name,{align:'right', wrap:true});
+    const name=row.getCell(1); name.value=label; styleTableCell(name,{align:'right', wrap:true});
     const qty=row.getCell(2); qty.value=Number(it.qty)||0; styleTableCell(qty,{align:'center', num:true});
     setPriceCell(row.getCell(3), it.unit_price, it.has_price===false);
     setPriceCell(row.getCell(4), it.line_total, false);
     r++;
   });
   ws.getRow(r).height=8; r++;
-  ws.mergeCells(`A${r}:C${r}`);
   const fill=RECEIPT.excel.headerFill;
-  ['A','B','C'].forEach(col=>{
-    const c=ws.getCell(`${col}${r}`);
-    styleTableCell(c,{align:'right', bold:true, size:14, fill});
+  const sub=invoiceSubtotal(inv, items);
+  const disc=invoiceDiscount(inv);
+  const pay=invoicePayable(inv, items);
+  const totalRows=disc?[['جمع فاکتور', sub],['تخفیف', disc],['قابل پرداخت', pay]]:[['جمع کل', pay]];
+  totalRows.forEach(([label, val], idx)=>{
+    ws.mergeCells(`A${r}:C${r}`);
+    ['A','B','C'].forEach(col=>{
+      const c=ws.getCell(`${col}${r}`);
+      styleTableCell(c,{align:'right', bold:true, size:14, fill});
+    });
+    ws.getCell(`A${r}`).value=label;
+    const tv=ws.getCell(`D${r}`);
+    tv.value=Number(val)||0;
+    styleTableCell(tv,{align:'right', bold:true, size:14, num:true, fill});
+    ws.getRow(r).height=idx===totalRows.length-1?RECEIPT.excel.totalRowPt:22;
+    r++;
   });
-  ws.getCell(`A${r}`).value='جمع کل';
-  const tv=ws.getCell(`D${r}`);
-  tv.value=Number(inv.total)||0;
-  styleTableCell(tv,{align:'right', bold:true, size:14, num:true, fill});
-  ws.getRow(r).height=RECEIPT.excel.totalRowPt;
-  ws.pageSetup.printArea='A1:D'+r;
+  ws.pageSetup.printArea='A1:D'+(r-1);
 }
 function fillReportSheets(wb, rep){
   const invWs=wb.addWorksheet('فاکتورها');
   setupExcelSheet(invWs, RECEIPT.excel.reportColsInv, 'a4');
-  invWs.mergeCells('A1:E1');
+  invWs.mergeCells('A1:F1');
   const t=invWs.getCell('A1');
   t.value='رستوران اسمی — گزارش فروش';
   t.font=excelFont({bold:true, size:RECEIPT.excel.titleSize});
@@ -1362,21 +1571,24 @@ function fillReportSheets(wb, rep){
   invWs.getCell('A2').value='از تاریخ'; invWs.getCell('B2').value=rep.from||'';
   invWs.getCell('C2').value='تا تاریخ'; invWs.getCell('D2').value=rep.to||'';
   invWs.getRow(2).height=22;
-  ['A2','B2','C2','D2','E2'].forEach(addr=>{ const c=invWs.getCell(addr); c.font=excelFont(addr[0]==='A'||addr[0]==='C'?{bold:true}:{}); c.alignment={horizontal:'right',vertical:'middle',readingOrder:2}; });
+  ['A2','B2','C2','D2','E2','F2'].forEach(addr=>{ const c=invWs.getCell(addr); c.font=excelFont(addr[0]==='A'||addr[0]==='C'?{bold:true}:{}); c.alignment={horizontal:'right',vertical:'middle',readingOrder:2}; });
   invWs.getCell('A3').value='میز'; invWs.getCell('B3').value=rep.table||'همه';
   invWs.getCell('C3').value='تعداد فاکتور'; invWs.getCell('D3').value=Number(rep.list.length)||0; invWs.getCell('D3').numFmt='#,##0';
   invWs.getRow(3).height=22;
   ['A3','B3','C3'].forEach(addr=>{ invWs.getCell(addr).font=excelFont(addr[0]==='A'||addr[0]==='C'?{bold:true}:{}); invWs.getCell(addr).alignment={horizontal:'right',vertical:'middle',readingOrder:2}; });
   invWs.getCell('D3').font=excelFont(); invWs.getCell('D3').alignment={horizontal:'right',vertical:'middle'};
-  invWs.getCell('A4').value='مجموع فروش'; invWs.getCell('A4').font=excelFont({bold:true});
+  invWs.getCell('A4').value='مجموع فروش (پس از تخفیف)'; invWs.getCell('A4').font=excelFont({bold:true});
   invWs.mergeCells('B4:C4');
   invWs.getCell('B4').value=Number(rep.total)||0; invWs.getCell('B4').numFmt='#,##0'; invWs.getCell('B4').font=excelFont({bold:true, size:14});
+  invWs.getCell('D4').value='مجموع تخفیف'; invWs.getCell('D4').font=excelFont({bold:true});
+  invWs.mergeCells('E4:F4');
+  invWs.getCell('E4').value=Number(rep.discountTotal)||0; invWs.getCell('E4').numFmt='#,##0'; invWs.getCell('E4').font=excelFont({bold:true, size:14});
   invWs.getRow(4).height=RECEIPT.excel.totalRowPt;
-  ['A4','B4','C4'].forEach(addr=>invWs.getCell(addr).alignment={horizontal:'right',vertical:'middle',readingOrder:2});
+  ['A4','B4','C4','D4','E4','F4'].forEach(addr=>invWs.getCell(addr).alignment={horizontal:'right',vertical:'middle',readingOrder:2});
   invWs.getRow(5).height=10;
   const ihr=6;
-  ['شماره فاکتور','تاریخ','شماره میز','جمع','وضعیت'].forEach((h,i)=>{ invWs.getCell(ihr,i+1).value=h; });
-  styleHeaderRow(invWs, ihr, 5);
+  ['شماره فاکتور','تاریخ','شماره میز','تخفیف','جمع قابل پرداخت','وضعیت'].forEach((h,i)=>{ invWs.getCell(ihr,i+1).value=h; });
+  styleHeaderRow(invWs, ihr, 6);
   let r=7;
   (rep.list||[]).forEach(inv=>{
     const row=invWs.getRow(r);
@@ -1384,8 +1596,9 @@ function fillReportSheets(wb, rep){
     const no=row.getCell(1); no.value=String(inv.invoice_no||''); styleTableCell(no,{align:'left'}); no.alignment={horizontal:'left',vertical:'middle',readingOrder:1};
     const dt=row.getCell(2); dt.value=inv.jalali||''; styleTableCell(dt,{align:'right', wrap:true});
     const tb=row.getCell(3); tb.value=inv.table_no?String(inv.table_no):'—'; styleTableCell(tb,{align:'center'});
-    const tot=row.getCell(4); tot.value=Number(inv.total)||0; styleTableCell(tot,{align:'right', num:true});
-    const st=row.getCell(5); st.value=inv.status||''; styleTableCell(st,{align:'center'});
+    const disc=row.getCell(4); disc.value=invoiceDiscount(inv); styleTableCell(disc,{align:'right', num:true});
+    const tot=row.getCell(5); tot.value=invoicePayable(inv); styleTableCell(tot,{align:'right', num:true});
+    const st=row.getCell(6); st.value=inv.status||''; styleTableCell(st,{align:'center'});
     r++;
   });
   if((rep.list||[]).length){
@@ -1393,11 +1606,12 @@ function fillReportSheets(wb, rep){
     const fill=RECEIPT.excel.headerFill;
     ['A','B','C'].forEach(col=>styleTableCell(invWs.getCell(`${col}${r}`),{align:'right', bold:true, size:14, fill}));
     invWs.getCell(`A${r}`).value='جمع کل';
-    const tv=invWs.getCell(`D${r}`); tv.value=Number(rep.total)||0; styleTableCell(tv,{align:'right', bold:true, size:14, num:true, fill});
-    styleTableCell(invWs.getCell(`E${r}`),{align:'center', fill});
+    const dv=invWs.getCell(`D${r}`); dv.value=Number(rep.discountTotal)||0; styleTableCell(dv,{align:'right', bold:true, size:14, num:true, fill});
+    const tv=invWs.getCell(`E${r}`); tv.value=Number(rep.total)||0; styleTableCell(tv,{align:'right', bold:true, size:14, num:true, fill});
+    styleTableCell(invWs.getCell(`F${r}`),{align:'center', fill});
     invWs.getRow(r).height=RECEIPT.excel.totalRowPt;
   }
-  invWs.pageSetup.printArea='A1:E'+Math.max(r,6);
+  invWs.pageSetup.printArea='A1:F'+Math.max(r,6);
 
   const itemWs=wb.addWorksheet('آیتم‌ها');
   setupExcelSheet(itemWs, RECEIPT.excel.reportColsItems, 'a4');
@@ -1411,9 +1625,10 @@ function fillReportSheets(wb, rep){
   let ir=4;
   (rep.allItems||[]).forEach(itx=>{
     const row=itemWs.getRow(ir);
-    row.height=String(itx.name||'').length>24?28:RECEIPT.excel.rowPt;
+    const itemLabel=adminItemLabel(itx);
+    row.height=String(itemLabel).length>24?28:RECEIPT.excel.rowPt;
     const no=row.getCell(1); no.value=String(itx.invoice_no||''); styleTableCell(no,{align:'left'}); no.alignment={horizontal:'left',vertical:'middle',readingOrder:1};
-    const nm=row.getCell(2); nm.value=itx.name||''; styleTableCell(nm,{align:'right', wrap:true});
+    const nm=row.getCell(2); nm.value=itemLabel; styleTableCell(nm,{align:'right', wrap:true});
     const qty=row.getCell(3); qty.value=Number(itx.qty)||0; styleTableCell(qty,{align:'center', num:true});
     setPriceCell(row.getCell(4), itx.unit_price, itx.has_price===false);
     setPriceCell(row.getCell(5), itx.line_total, false);
@@ -1433,8 +1648,9 @@ function fillReportSheets(wb, rep){
   let tr=4;
   (rep.top||[]).forEach(item=>{
     const row=topWs.getRow(tr);
-    row.height=String(item.name||'').length>24?28:RECEIPT.excel.rowPt;
-    const nm=row.getCell(1); nm.value=item.name||''; styleTableCell(nm,{align:'right', wrap:true});
+    const topLabel=adminItemLabel(item);
+    row.height=String(topLabel).length>24?28:RECEIPT.excel.rowPt;
+    const nm=row.getCell(1); nm.value=topLabel; styleTableCell(nm,{align:'right', wrap:true});
     const qty=row.getCell(2); qty.value=Number(item.qty)||0; styleTableCell(qty,{align:'center', num:true});
     setPriceCell(row.getCell(3), item.amount, false);
     tr++;
@@ -2164,22 +2380,37 @@ async function currentView(){
   const no=await peekNextNo();
   const now=new Date();
   const p=jalaliParts(now);
+  const sub=cartSubtotal();
+  const disc=cartDiscount();
   const inv={
     invoice_no:no,
     created_at:now.toISOString(),
     jalali:faDateTime(now),
     jalali_ymd:p.ymd,
     table_no:loadCart().table||'',
-    total:cartTotal(),
+    subtotal:sub,
+    discount:disc,
+    total:Math.max(0, sub-disc),
     status:'draft'
   };
-  const items=lines.map(l=>({invoice_no:no, item_id:l.id, name:l.name, qty:l.qty, unit_price:l.unit, line_total:l.line, has_price:l.has_price}));
+  const items=lines.map(l=>({invoice_no:no, item_id:l.id, name:l.name, qty:l.qty, unit_price:l.unit, line_total:l.line, has_price:l.has_price, manual:!!l.manual}));
   return {inv, items, saved:false};
+}
+function receiptTotalRows(inv, items){
+  const sub=invoiceSubtotal(inv, items);
+  const disc=invoiceDiscount(inv);
+  const pay=invoicePayable(inv, items);
+  if(!disc){
+    return `<tr class="tot-row"><td colspan="5">جمع کل: ${fmtPrice(pay)} تومان</td></tr>`;
+  }
+  return `<tr class="tot-row tot-sub"><td colspan="5">جمع فاکتور: ${fmtPrice(sub)} تومان</td></tr>
+        <tr class="tot-row tot-disc"><td colspan="5">تخفیف: ${fmtPrice(disc)} تومان</td></tr>
+        <tr class="tot-row"><td colspan="5">قابل پرداخت: ${fmtPrice(pay)} تومان</td></tr>`;
 }
 function receiptHTML(inv, items, report){
   const rows=(items||[]).map((it,i)=>{
     const noPrice=it.has_price===false||(!it.unit_price&&!it.has_price);
-    const name=(it.name||'')+(noPrice?' <small>بدون قیمت</small>':'');
+    const name=escHtml(it.name||'')+(noPrice?' <small>بدون قیمت</small>':'');
     return `<tr>
       <td class="col-row">${toFa(i+1)}</td>
       <td class="col-name">${name}</td>
@@ -2213,7 +2444,7 @@ function receiptHTML(inv, items, report){
       </thead>
       <tbody>
         ${rows}
-        <tr class="tot-row"><td colspan="5">جمع کل: ${fmtPrice(inv.total)} تومان</td></tr>
+        ${receiptTotalRows(inv, items)}
       </tbody>
     </table>
     <div class="c thanks">نوش جان</div>
@@ -2323,7 +2554,7 @@ async function renderInvoice(){
     const priceShow=noP?'<span class="noprice">بدون قیمت</span>':fmtPrice(it.unit_price);
     const qtyCtrl=editable&&id?qtyWidget(id,false):`<span class="inv-line-qtyval">${toFa(it.qty)}</span>`;
     const rm=editable&&id?`<button type="button" class="rm" onclick="cartRemove('${id}')" aria-label="حذف"><span class="rm-txt">حذف</span>${rmIcon}</button>`:'';
-    return `<div class="inv-line"><div class="inv-line-name">${it.name}</div><div class="inv-line-qty">${qtyCtrl}</div><div class="inv-line-unit num">${priceShow}</div><div class="inv-line-sum num">${fmtPrice(it.line_total)}</div><div class="inv-line-rm">${rm}</div></div>`;
+    return `<div class="inv-line"><div class="inv-line-name">${escHtml(it.name)}${isManualItem(it)?' <small class="noprice">'+escHtml(adminManualLabel())+'</small>':''}</div><div class="inv-line-qty">${qtyCtrl}</div><div class="inv-line-unit num">${priceShow}</div><div class="inv-line-sum num">${fmtPrice(it.line_total)}</div><div class="inv-line-rm">${rm}</div></div>`;
   }).join('');
   const empty=!items.length?`<div class="inv-empty">آیتمی انتخاب نشده است</div>`:
     `<div class="inv-lines"><div class="inv-lines-head"><span>نام آیتم</span><span>تعداد</span><span>قیمت واحد</span><span>جمع</span><span></span></div>${lines}</div>`;
@@ -2353,8 +2584,38 @@ async function renderInvoice(){
       <input id="invSearch" type="search" placeholder="جستجوی آیتم…" autocomplete="off" enterkeyhint="search" oninput="onInvSearch(this)">
       <div id="invSearchResults" class="inv-search-results" hidden></div>
     </div>`:''}
+    ${editable?`<div class="inv-manual" id="invManualWrap">
+      <h3>افزودن آیتم خارج از منو</h3>
+      <div class="inv-manual-grid">
+        <div class="field"><span>نام آیتم</span><input id="manualName" type="text" placeholder="مثلاً نوشیدنی سفارشی" autocomplete="off"></div>
+        <div class="field"><span>قیمت (تومان)</span><input id="manualPrice" inputmode="numeric" placeholder="مثلاً ۱۵۰٬۰۰۰" autocomplete="off"></div>
+        <div class="field"><span>تعداد (اختیاری)</span><input id="manualQty" inputmode="numeric" placeholder="۱" autocomplete="off"></div>
+      </div>
+      <p id="manualErr" class="field-err" hidden></p>
+      <div class="inv-manual-actions">
+        <button type="button" class="btn primary" id="btnAddManual" onclick="addManualItem()">افزودن به فاکتور</button>
+      </div>
+    </div>`:''}
     ${empty}
-    <div class="inv-total"><span>جمع کل</span><b>${fmtPrice(inv.total)} تومان</b></div>
+    ${(() => {
+      const sub=invoiceSubtotal(inv, items);
+      const disc=invoiceDiscount(inv);
+      const pay=invoicePayable(inv, items);
+      const discVal=editable?(loadCart().discount?toFa(loadCart().discount):''):'';
+      const discRow=editable?`<div class="inv-total-row">
+        <span>تخفیف (تومان)</span>
+        <div class="inv-disc-field">
+          <input id="invDiscount" inputmode="numeric" placeholder="۰" value="${discVal}" autocomplete="off" oninput="onDiscountInput(this)" onblur="onDiscountBlur(this)">
+          <span class="unit">تومان</span>
+        </div>
+      </div>`:`<div class="inv-total-row"><span>تخفیف</span><b>${fmtPrice(disc)} تومان</b></div>`;
+      return `<div class="inv-totals" id="invTotals">
+      <div class="inv-total-row"><span>جمع فاکتور</span><b id="invSubtotalVal">${fmtPrice(sub)} تومان</b></div>
+      ${discRow}
+      <p id="discErr" class="field-err" hidden style="margin:0 14px 8px"></p>
+      <div class="inv-total-row pay"><span>قابل پرداخت</span><b id="invPayableVal">${fmtPrice(pay)} تومان</b></div>
+    </div>`;
+    })()}
     ${btns}
     ${printNudgeHTML()}
     ${editable?`<div class="hist" id="invHist"></div>`:''}
@@ -2381,7 +2642,7 @@ async function renderHistory(){
       <b><bdi dir="ltr" style="unicode-bidi:isolate;direction:ltr">${toFa(inv.invoice_no)}</bdi></b>
       <span>${inv.jalali||''}</span>
       <span>میز ${inv.table_no?toFa(inv.table_no):'—'}</span>
-      <span>${fmtPrice(inv.total)} تومان</span>
+      <span>${fmtPrice(invoicePayable(inv))} تومان</span>
       <div class="actions">
         <button type="button" onclick="openInvoice('${inv.invoice_no}')">مشاهده</button>
         <button type="button" onclick="openInvoice('${inv.invoice_no}').then(()=>printInvoice())">چاپ</button>
@@ -2391,9 +2652,9 @@ async function renderHistory(){
     </div>`).join('');
 }
 function clearCartAsk(){
-  if(!cartCount()){toast('سبد خرید خالی است'); return;}
+  if(!cartCount() && !loadCart().discount){toast('سبد خرید خالی است'); return;}
   if(!confirm('سبد خرید پاک شود؟')) return;
-  const c=loadCart(); saveCart({items:{}, table:c.table||''});
+  const c=loadCart(); saveCart(emptyCart(c.table||''));
   refreshQtyUI(); renderInvoice();
 }
 async function submitInvoice(){
@@ -2405,22 +2666,39 @@ async function submitInvoice(){
   try{
     await dbOpen();
     const now=new Date();
+    const sub=lines.reduce((s,l)=>s+l.line,0);
+    const discIn=document.getElementById('invDiscount');
+    if(discIn) onDiscountInput(discIn);
+    const discParsed=parseMoneyInput(discIn?discIn.value:(loadCart().discount||0), true);
+    if(String(discIn?.value||'').trim() && !discParsed.ok){
+      toast('مبلغ تخفیف نامعتبر است');
+      if(btn) btn.disabled=false;
+      return;
+    }
+    const disc=discParsed.ok?discParsed.value:0;
+    if(disc>sub){
+      toast('تخفیف نمی‌تواند بیشتر از جمع فاکتور باشد');
+      if(btn) btn.disabled=false;
+      return;
+    }
     const invBase={
       created_at:now.toISOString(),
       jalali:faDateTime(now),
       jalali_ymd:jalaliParts(now).ymd,
       table_no:table,
-      total:lines.reduce((s,l)=>s+l.line,0),
+      subtotal:sub,
+      discount:disc,
+      total:Math.max(0, sub-disc),
       status:'registered'
     };
     const itemBase=lines.map(l=>({
       item_id:l.id, name:l.name, qty:l.qty,
-      unit_price:l.unit, line_total:l.line, has_price:l.has_price
+      unit_price:l.unit, line_total:l.line, has_price:l.has_price, manual:!!l.manual
     }));
     const inv=await saveNewInvoice(invBase, itemBase, now);
     const no=inv.invoice_no;
     const items=itemBase.map(it=>Object.assign({}, it, {invoice_no:no}));
-    saveCart({items:{}, table:''});
+    saveCart(emptyCart(''));
     refreshQtyUI();
     lastSaved=inv;
     invViewNo=no;
@@ -2457,10 +2735,19 @@ function invoiceSheetRows(inv, items){
   ];
   items.forEach(it=>{
     const unit=it.has_price===false?'بدون قیمت':it.unit_price;
-    rows.push([it.name, it.qty, unit, it.line_total]);
+    rows.push([adminItemLabel(it), it.qty, unit, it.line_total]);
   });
   rows.push([]);
-  rows.push(['جمع کل','','',inv.total]);
+  const sub=invoiceSubtotal(inv, items);
+  const disc=invoiceDiscount(inv);
+  const pay=invoicePayable(inv, items);
+  if(disc){
+    rows.push(['جمع فاکتور','','',sub]);
+    rows.push(['تخفیف','','',disc]);
+    rows.push(['قابل پرداخت','','',pay]);
+  }else{
+    rows.push(['جمع کل','','',pay]);
+  }
   return rows;
 }
 async function excelInvoice(){
@@ -2559,22 +2846,24 @@ async function renderReport(){
     const its=await getInvoiceItems(inv.invoice_no);
     its.forEach(it=>allItems.push(it));
   }
-  const total=list.reduce((s,i)=>s+ (i.total||0),0);
+  const total=list.reduce((s,i)=>s+ invoicePayable(i),0);
+  const discountTotal=list.reduce((s,i)=>s+ invoiceDiscount(i),0);
   const agg={};
   allItems.forEach(it=>{
     const k=it.name;
-    if(!agg[k]) agg[k]={name:k, qty:0, amount:0};
+    if(!agg[k]) agg[k]={name:k, qty:0, amount:0, manual:isManualItem(it)};
+    else if(!isManualItem(it)) agg[k].manual=false;
     agg[k].qty+=it.qty||0;
     agg[k].amount+=it.line_total||0;
   });
   const top=Object.values(agg).sort((a,b)=>b.qty-a.qty).slice(0,10);
-  const topHtml=top.length?`<ul class="top-items">${top.map(t=>`<li><span>${t.name}</span><span>${toFa(t.qty)} عدد — ${fmtPrice(t.amount)} تومان</span></li>`).join('')}</ul>`:'<div class="inv-empty" style="padding:8px">موردی نیست</div>';
+  const topHtml=top.length?`<ul class="top-items">${top.map(t=>`<li><span>${escHtml(adminItemLabel(t))}</span><span>${toFa(t.qty)} عدد — ${fmtPrice(t.amount)} تومان</span></li>`).join('')}</ul>`:'<div class="inv-empty" style="padding:8px">موردی نیست</div>';
   const rows=list.length?list.map(inv=>`
     <div class="hist-item">
       <b><bdi dir="ltr" style="unicode-bidi:isolate;direction:ltr">${toFa(inv.invoice_no)}</bdi></b>
       <span>${inv.jalali||''}</span>
       <span>میز ${inv.table_no?toFa(inv.table_no):'—'}</span>
-      <span>${fmtPrice(inv.total)} تومان</span>
+      <span>${fmtPrice(invoicePayable(inv))} تومان</span>
       <div class="actions">
         <button type="button" onclick="closeReport(); openInvoice('${inv.invoice_no}')">مشاهده</button>
         <button type="button" onclick="openInvoice('${inv.invoice_no}').then(()=>printInvoice())">چاپ</button>
@@ -2584,7 +2873,8 @@ async function renderReport(){
   body.innerHTML=`
     <div class="sum">
       <div class="card"><span>تعداد فاکتور</span><b>${toFa(list.length)}</b></div>
-      <div class="card"><span>مجموع فروش</span><b>${fmtPrice(total)} تومان</b></div>
+      <div class="card"><span>مجموع فروش (پس از تخفیف)</span><b>${fmtPrice(total)} تومان</b></div>
+      <div class="card"><span>مجموع تخفیف</span><b>${fmtPrice(discountTotal)} تومان</b></div>
       <div class="card full"><span>پرفروش‌ترین آیتم‌ها</span>${topHtml}</div>
     </div>
     <div class="btn-row" style="margin-bottom:12px">
@@ -2594,21 +2884,22 @@ async function renderReport(){
     <h3 style="margin:0 0 8px;font-size:16px">فهرست فاکتورها</h3>
     ${rows}
   `;
-  window._lastReport={list, allItems, total, top, from:jVal('repFrom'), to:jVal('repTo'), table:(document.getElementById('repTable')?.value||'').trim()};
+  window._lastReport={list, allItems, total, discountTotal, top, from:jVal('repFrom'), to:jVal('repTo'), table:(document.getElementById('repTable')?.value||'').trim()};
 }
 async function printReport(){
   const r=window._lastReport; if(!r) return;
   const pa=document.getElementById('printArea');
   pa.className='receipt';
-  const top=r.top.map(t=>`<tr><td>${t.name}</td><td>${toFa(t.qty)}</td><td></td><td>${fmtPrice(t.amount)}</td></tr>`).join('');
-  const rows=r.list.map(inv=>`<tr><td><bdi dir="ltr" style="unicode-bidi:isolate;direction:ltr">${toFa(inv.invoice_no)}</bdi></td><td>${inv.jalali||''}</td><td>${inv.table_no?toFa(inv.table_no):'—'}</td><td>${fmtPrice(inv.total)}</td></tr>`).join('');
+  const top=r.top.map(t=>`<tr><td>${escHtml(adminItemLabel(t))}</td><td>${toFa(t.qty)}</td><td></td><td>${fmtPrice(t.amount)}</td></tr>`).join('');
+  const rows=r.list.map(inv=>`<tr><td><bdi dir="ltr" style="unicode-bidi:isolate;direction:ltr">${toFa(inv.invoice_no)}</bdi></td><td>${inv.jalali||''}</td><td>${inv.table_no?toFa(inv.table_no):'—'}</td><td>${fmtPrice(invoicePayable(inv))}</td></tr>`).join('');
   pa.innerHTML=`<div class="receipt-inner">
     <h1>رستوران اسمی</h1>
     <div class="c">گزارش فروش</div>
     <div class="c">${r.from||''} تا ${r.to||''}${r.table?' — میز '+r.table:''}</div>
     <hr>
     <div>تعداد فاکتور: ${toFa(r.list.length)}</div>
-    <div class="tot">مجموع فروش: ${fmtPrice(r.total)} تومان</div>
+    <div class="tot">مجموع فروش (پس از تخفیف): ${fmtPrice(r.total)} تومان</div>
+    <div>مجموع تخفیف: ${fmtPrice(r.discountTotal||0)} تومان</div>
     <hr>
     <b>پرفروش‌ترین آیتم‌ها</b>
     <table><thead><tr><th>نام</th><th>تعداد</th><th></th><th>جمع</th></tr></thead><tbody>${top}</tbody></table>
@@ -2665,7 +2956,7 @@ async function backupExcel(){
   const invRows=[['شماره فاکتور','تاریخ ثبت','تاریخ شمسی','تاریخ شمسی (عددی)','شماره میز','جمع','وضعیت']];
   data.invoices.forEach(inv=>invRows.push([inv.invoice_no, inv.created_at, inv.jalali||'', inv.jalali_ymd||'', inv.table_no||'—', inv.total, inv.status||'']));
   const itemRows=[['شماره فاکتور','شناسه آیتم','نام آیتم','تعداد','قیمت واحد','جمع']];
-  data.invoice_items.forEach(it=>itemRows.push([it.invoice_no, it.item_id||'', it.name, it.qty, it.unit_price, it.line_total]));
+  data.invoice_items.forEach(it=>itemRows.push([it.invoice_no, it.item_id||'', adminItemLabel(it), it.qty, it.unit_price, it.line_total]));
   const menuRows=[['شناسه','بخش','دسته','نام','قیمت','فعال']];
   (data.menu_items||[]).forEach(it=>menuRows.push([it.id, it.section, it.category, it.name, it.price, it.active?1:0]));
   const metaRows=[['روز شمسی (YYMMDD)','آخرین شماره']];
@@ -2748,6 +3039,17 @@ function adminQS(){return isAdminLink()?'?admin':'';}
 window.cartAdd=cartAdd;
 window.cartDec=cartDec;
 window.cartRemove=cartRemove;
+window.addManualItem=addManualItem;
+window.adminItemLabel=adminItemLabel;
+window.adminManualLabel=adminManualLabel;
+window.isManualItem=isManualItem;
+window.onDiscountInput=onDiscountInput;
+window.onDiscountBlur=onDiscountBlur;
+window.invoicePayable=invoicePayable;
+window.invoiceDiscount=invoiceDiscount;
+window.invoiceSubtotal=invoiceSubtotal;
+window.cartSubtotal=cartSubtotal;
+window.cartDiscount=cartDiscount;
 window.openInvoice=openInvoice;
 window.closeInvoice=closeInvoice;
 window.submitInvoice=submitInvoice;
@@ -2796,20 +3098,27 @@ window.parsePrice=parsePrice;
 window.fmtPrice=fmtPrice;
 window.toFa=toFa;
 // test helper for screenshots only; not shown in UI
-window.__esmiSaveInvoiceAt=async function(iso, table, pairs){
+window.__esmiSaveInvoiceAt=async function(iso, table, pairs, extra){
   await dbOpen(); await syncMenuItems();
   const when=new Date(iso);
   const p=jalaliParts(when);
-  const lines=pairs.map(([id,qty])=>{
+  extra=extra||{};
+  const lines=(pairs||[]).map(([id,qty])=>{
     const ref=itemRef(id);
-    const unit=ref.has_price?ref.price:0;
+    const unit=ref&&ref.has_price?ref.price:0;
     return {...ref, qty, unit, line:unit*qty};
   });
-  const invBase={created_at:when.toISOString(), jalali:faDateTime(when), jalali_ymd:p.ymd, table_no:(table==null||table==='')?'':String(table), total:lines.reduce((s,l)=>s+l.line,0), status:'registered'};
-  const items=lines.map(l=>({item_id:l.id, name:l.name, qty:l.qty, unit_price:l.unit, line_total:l.line, has_price:l.has_price}));
+  (extra.manuals||[]).forEach(m=>{
+    const qty=m.qty||1, unit=m.price||0;
+    lines.push({id:m.id||('manual|tmp'), name:m.name, qty, unit, line:unit*qty, has_price:true, manual:true});
+  });
+  const sub=lines.reduce((s,l)=>s+l.line,0);
+  const disc=Math.max(0, Number(extra.discount)||0);
+  const invBase={created_at:when.toISOString(), jalali:faDateTime(when), jalali_ymd:p.ymd, table_no:(table==null||table==='')?'':String(table), subtotal:sub, discount:disc, total:Math.max(0, sub-disc), status:'registered'};
+  const items=lines.map(l=>({item_id:l.id, name:l.name, qty:l.qty, unit_price:l.unit, line_total:l.line, has_price:l.has_price!==false, manual:!!l.manual}));
   return await saveNewInvoice(invBase, items, when);
 };
-window.__esmiDB={dbOpen, syncMenuItems, listInvoices, exportAllData, peekNextNo, allocNextNo, saveNewInvoice, importAllData, getCounters, setCounters, getInvoice, getInvoiceItems, deleteInvoiceRecord, parseInvoiceNo, formatInvoiceNo};
+window.__esmiDB={dbOpen, syncMenuItems, listInvoices, exportAllData, peekNextNo, allocNextNo, saveNewInvoice, importAllData, getCounters, setCounters, getInvoice, getInvoiceItems, deleteInvoiceRecord, parseInvoiceNo, formatInvoiceNo, invoicePayable, invoiceDiscount, invoiceSubtotal};
 window.deleteInvoice=deleteInvoice;
 window.deleteInvoiceRecord=deleteInvoiceRecord;
 window.saveNewInvoice=saveNewInvoice;

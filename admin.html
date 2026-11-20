@@ -2009,7 +2009,11 @@ function loadPdfLibs(){
     s.onerror=()=>rej(new Error('jspdf'));
     document.head.appendChild(s);
   });
-  return Promise.all([html2(), jsp()]).then(([h,J])=>({html2canvas:h, jsPDF:J}));
+  const withTimeout=(p,ms,label)=>new Promise((res,rej)=>{
+    const t=setTimeout(()=>rej(new Error(label||'timeout')), ms);
+    p.then(v=>{clearTimeout(t);res(v);}, e=>{clearTimeout(t);rej(e);});
+  });
+  return withTimeout(Promise.all([html2(), jsp()]).then(([h,J])=>({html2canvas:h, jsPDF:J})), 12000, 'pdf-libs-timeout');
 }
 function canvasHasInk(canvas){
   try{
@@ -2303,13 +2307,15 @@ function unbindPrintCleanup(){
   }
   _printCleanupBound=false;
 }
-function armPrintCleanup(){
+function armPrintCleanup(after){
   unbindPrintCleanup();
   _printCleanupBound=true;
+  const afterFn=typeof after==='function'?after:null;
   const finish=()=>{
     if(!_printCleanupBound) return;
     unbindPrintCleanup();
     endPrintMode();
+    if(afterFn){ try{ afterFn(); }catch(e){ console.error(e); } }
   };
   _afterPrintFn=finish;
   window.addEventListener('afterprint', finish);
@@ -2760,18 +2766,32 @@ async function submitInvoice(){
     if(btn) btn.disabled=false;
   }
 }
+function scheduleInvoicePdfBackup(inv, items){
+  try{
+    Promise.resolve()
+      .then(()=>saveInvoicePdfBackup(inv, items))
+      .catch(e=>console.error(e));
+  }catch(e){ console.error(e); }
+}
 async function printInvoice(){
   const {inv, items}=await currentView();
-  // Folder prompt must run BEFORE html.printing, which hides all UI except the receipt.
-  try{ await saveInvoicePdfBackup(inv, items); }catch(e){ console.error(e); }
-  const pa=document.getElementById('printArea');
-  pa.className='receipt';
-  pa.innerHTML=receiptHTML(inv, items);
-  beginPrintTitle(inv && inv.invoice_no ? String(inv.invoice_no) : 'فاکتور');
-  document.documentElement.classList.add('printing');
-  await applyReceiptPageSize();
-  armPrintCleanup();
-  window.print();
+  if(!inv){ if(typeof toast==='function') toast('فاکتوری برای چاپ نیست'); return; }
+  // Print first. Auto-PDF backup (folder prompt / CDN / File System Access)
+  // must not block or hide the print dialog. Run it after print cleanup.
+  try{
+    const pa=document.getElementById('printArea');
+    pa.className='receipt';
+    pa.innerHTML=receiptHTML(inv, items);
+    beginPrintTitle(inv && inv.invoice_no ? String(inv.invoice_no) : 'فاکتور');
+    document.documentElement.classList.add('printing');
+    await applyReceiptPageSize();
+    armPrintCleanup(()=>scheduleInvoicePdfBackup(inv, items));
+    window.print();
+  }catch(e){
+    console.error(e);
+    try{ endPrintMode(); }catch(e2){}
+    if(typeof toast==='function') toast('چاپ فاکتور ناموفق بود');
+  }
 }
 function invoiceSheetRows(inv, items){
   const rows=[
@@ -3110,6 +3130,7 @@ window.openInvoice=openInvoice;
 window.closeInvoice=closeInvoice;
 window.submitInvoice=submitInvoice;
 window.printInvoice=printInvoice;
+window.scheduleInvoicePdfBackup=scheduleInvoicePdfBackup;
 window.excelInvoice=excelInvoice;
 window.excelSaved=excelSaved;
 window.clearCartAsk=clearCartAsk;

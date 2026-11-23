@@ -183,6 +183,17 @@ body.admin nav{top:50px}
 .hist-edited{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:99px;background:#2a2a2a;border:1px solid #555;color:#ddd;font-size:10px;font-weight:700;vertical-align:middle;white-space:nowrap}
 .edit-banner{margin:0 0 14px;padding:10px 12px;border-radius:14px;background:#181818;border:1px solid #3a3a3a;font-size:13px;color:#ddd;line-height:1.6}
 .edit-banner b{color:#fff}
+.inv-extra{margin:0 0 14px;display:grid;gap:8px}
+.inv-takeaway{display:flex;align-items:center;gap:8px;background:#141414;border:1px solid #2c2c2c;border-radius:12px;padding:10px 12px;font-size:14px;font-weight:700;cursor:pointer}
+.inv-takeaway input{width:18px;height:18px;margin:0}
+.field textarea{width:100%;border:0;background:transparent;color:#fff;font:inherit;font-size:14px;padding:2px 0;resize:vertical;min-height:40px;box-sizing:border-box}
+.field textarea:focus{outline:0}
+.inv-takeaway-badge{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:99px;background:#e6e6e6;color:#111;font-size:11px;font-weight:800;vertical-align:middle;white-space:nowrap}
+.inv-no-search{margin:0 0 14px}
+.inv-no-search .row{display:flex;gap:8px}
+.inv-no-search input{flex:1;min-width:0;background:#141414;border:1px solid #3a3a3a;border-radius:14px;color:#f1f1f1;font:inherit;font-size:14px;padding:10px 14px;direction:rtl}
+.inv-no-search input:focus{outline:0;border-color:#888}
+.inv-no-search .msg{color:#ff8a80;font-size:12px;margin:6px 2px 0}
 
 .inv-search{position:relative;margin:0 0 14px}
 .inv-search input{width:100%;background:#141414;border:1px solid #3a3a3a;border-radius:14px;color:#f1f1f1;font:inherit;font-size:14px;padding:11px 14px}
@@ -337,6 +348,7 @@ html.printing #printArea .receipt-inner table.items td{border:1px solid #000!imp
 .receipt-inner .c{text-align:center}
 .receipt-inner .sub{font-size:9pt;margin:0 0 2.5mm;color:#000}
 .receipt-inner .thanks{margin-top:2mm;font-size:9pt;color:#000}
+.receipt-inner .takeaway{margin:2mm 0 0;padding:1mm 0;border:2px solid #000;text-align:center;font-size:15pt;font-weight:800;color:#000}
 .receipt-inner hr{border:0;border-top:1px solid #000;margin:3px 0;width:100%}
 .receipt-inner table{width:100%;max-width:100%;border-collapse:collapse;table-layout:fixed;box-sizing:border-box;border:1px solid #000}
 .receipt-inner th,.receipt-inner td{padding:2px 3px;text-align:right;vertical-align:middle;font-size:8.5pt;color:#000;background:#fff;word-wrap:break-word;overflow-wrap:anywhere;border:1px solid #000}
@@ -1256,7 +1268,7 @@ function adminItemLabel(it){
   const n=String(it&&it.name||'');
   return isManualItem(it)?(n+' ('+adminManualLabel()+')'):n;
 }
-function emptyCart(table){return {items:{}, table:table||'', manuals:[], manualSeq:0, discountPercent:0, overrides:{}};}
+function emptyCart(table){return {items:{}, table:table||'', manuals:[], manualSeq:0, discountPercent:0, overrides:{}, takeaway:false, note:''};}
 function cartStorageKey(){ return invEditNo ? EDIT_CART_KEY : CART_KEY; }
 function normalizeCart(c){
   if(!c||typeof c!=='object') return emptyCart('');
@@ -1276,7 +1288,9 @@ function normalizeCart(c){
     manuals,
     manualSeq:Number(c.manualSeq)||0,
     discountPercent:(()=>{ const n=Number(c.discountPercent); return isFinite(n)?Math.min(100, Math.max(0, n)):0; })(),
-    overrides
+    overrides,
+    takeaway:!!c.takeaway,
+    note:String(c.note||'')
   };
 }
 function loadCart(){
@@ -2458,6 +2472,8 @@ function cartFromInvoice(inv, items){
       c.overrides[rawId]={name:it.name, price:Number(it.unit_price)||0, has_price:it.has_price!==false};
     }
   });
+  c.takeaway=!!(inv && inv.takeaway);
+  c.note=String(inv && inv.note || '');
   const pct=invoiceDiscountPercent(inv);
   if(pct!=null) c.discountPercent=pct;
   else {
@@ -2576,7 +2592,9 @@ async function currentView(){
       subtotal:sub,
       discountPercent:pct,
       discount:disc,
-      total:Math.max(0, sub-disc)
+      total:Math.max(0, sub-disc),
+      takeaway:!!loadCart().takeaway,
+      note:loadCart().note.trim()
     });
     const items=lines.map(l=>({invoice_no:invEditNo, item_id:l.id, name:l.name, qty:l.qty, unit_price:l.unit, line_total:l.line, has_price:l.has_price, manual:!!l.manual}));
     return {inv, items, saved:false, editing:true, original:orig};
@@ -2607,7 +2625,9 @@ async function currentView(){
     discountPercent:pct,
     discount:disc,
     total:Math.max(0, sub-disc),
-    status:'draft'
+    status:'draft',
+    takeaway:!!loadCart().takeaway,
+    note:loadCart().note.trim()
   };
   const items=lines.map(l=>({invoice_no:no, item_id:l.id, name:l.name, qty:l.qty, unit_price:l.unit, line_total:l.line, has_price:l.has_price, manual:!!l.manual}));
   return {inv, items, saved:false};
@@ -2663,7 +2683,7 @@ function receiptHTML(inv, items, report){
         ${receiptTotalRows(inv, items)}
       </tbody>
     </table>
-    <div class="c thanks">نوش جان</div>
+    ${inv.takeaway?'<div class="takeaway">بیرون‌بر</div>':''}
   </div>`;
 }
 
@@ -2794,11 +2814,25 @@ async function renderInvoice(){
       <button type="button" onclick="clearCartAsk()">پاک کردن</button>
     </div>`;
   const editBanner=editing?`<div class="edit-banner">در حال ویرایش فاکتور <bdi dir="ltr"><b>${toFa(inv.invoice_no)}</b></bdi>. شماره و تاریخ اصلی عوض نمی‌شود. پس از ذخیره، یک PDF جدید با پسوند «ویرایش» در پوشه ذخیره می‌شود و فایل قبلی باقی می‌ماند.</div>`:'';
-  const viewedBadge=(!editing && saved && invoiceIsEdited(inv))?' <span class="hist-edited">ویرایش شده</span>':'';
+  const viewedBadge=((!editing && saved && invoiceIsEdited(inv))?' <span class="hist-edited">ویرایش شده</span>':'')+(inv.takeaway?' <span class="inv-takeaway-badge">بیرون‌بر</span>':'');
+  const cNow=editable?loadCart():null;
+  const extraHTML=editable?`<div class="inv-extra">
+      <label class="inv-takeaway"><input type="checkbox" id="invTakeaway" ${cNow.takeaway?'checked':''} onchange="onTakeawayInput(this)"> بیرون‌بر</label>
+      <div class="field"><span>توضیحات (اختیاری)</span><textarea id="invNote" rows="2" placeholder="مثلاً بدون پیاز" oninput="onNoteInput(this)">${escHtml(cNow.note||'')}</textarea></div>
+    </div>`:(String(inv.note||'').trim()?`<div class="field" style="margin:0 0 14px"><span>توضیحات</span><b style="white-space:pre-wrap;font-weight:400">${escHtml(String(inv.note).trim())}</b></div>`:'');
+  const noSearchHTML=(editable&&!editing)?`<div class="inv-no-search">
+      <div class="row">
+        <input id="invNoSearch" type="search" inputmode="numeric" placeholder="جستجوی شماره فاکتور برای ویرایش…" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();findInvoiceByNo();}">
+        <button type="button" class="btn" onclick="findInvoiceByNo()">جستجو</button>
+      </div>
+      <p id="invNoSearchMsg" class="msg" hidden></p>
+      <div id="invNoSearchResults" class="hist"  style="margin-top:8px;padding-top:0;border-top:0" hidden></div>
+    </div>`:'';
   box.innerHTML=`
     <button type="button" class="close" onclick="closeInvoice()">×</button>
     <h2>${editing?'ویرایش فاکتور':'فاکتور'}${viewedBadge}</h2>
     <p class="sub">رستوران اسمی</p>
+    ${noSearchHTML}
     ${editBanner}
     <div class="meta-grid">
       <div class="field inv-no-field"><span>شماره فاکتور</span><b class="inv-no"><bdi dir="ltr" style="unicode-bidi:isolate;direction:ltr">${toFa(inv.invoice_no)}</bdi>${(!saved && !editing)?' <small class="inv-no-hint">(پس از ثبت)</small>':''}</b></div>
@@ -2807,6 +2841,7 @@ async function renderInvoice(){
         ${editable?`<input id="tableNo" inputmode="numeric" placeholder="مثلاً ۵" value="${tableVal.replace(/"/g,'')}" oninput="onTableInput(this)">`:`<b>${inv.table_no?toFa(inv.table_no):'—'}</b>`}
       </div>
     </div>
+    ${extraHTML}
     ${editable?`<div class="inv-search" id="invSearchWrap">
       <input id="invSearch" type="search" placeholder="جستجوی آیتم…" autocomplete="off" enterkeyhint="search" oninput="onInvSearch(this)">
       <div id="invSearchResults" class="inv-search-results" hidden></div>
@@ -2866,6 +2901,57 @@ function onTableInput(el){
   if(err) err.hidden=true;
   document.getElementById('tableField')?.classList.remove('bad');
 }
+function onTakeawayInput(el){
+  const c=loadCart();
+  c.takeaway=!!el.checked;
+  saveCart(c);
+}
+function onNoteInput(el){
+  const c=loadCart();
+  c.note=String(el.value||'');
+  saveCart(c);
+}
+function normInvoiceNoQuery(s){
+  return toEn(String(s||'')).replace(/[\u200c\u200e\u200f\s]/g,'').replace(/[\u2010-\u2015\u2212\u0640\/_]/g,'-');
+}
+async function findInvoiceByNo(){
+  const input=document.getElementById('invNoSearch');
+  const msg=document.getElementById('invNoSearchMsg');
+  const box=document.getElementById('invNoSearchResults');
+  const q=normInvoiceNoQuery(input?input.value:'');
+  const say=(t)=>{ if(msg){ msg.textContent=t; msg.hidden=!t; } };
+  if(box){ box.hidden=true; box.innerHTML=''; }
+  if(!q){ say('شماره فاکتور را وارد کنید'); return; }
+  let list=[];
+  try{ await dbOpen(); list=await listInvoices(); }
+  catch(e){ console.error(e); say('جستجو ناموفق بود'); return; }
+  const exact=list.find(inv=>normInvoiceNoQuery(inv.invoice_no)===q);
+  if(exact){ say(''); await editInvoice(exact.invoice_no); return; }
+  const qn=/^\d+$/.test(q)?parseInt(q,10):null;
+  const matches=list.filter(inv=>{
+    const no=normInvoiceNoQuery(inv.invoice_no);
+    if(no.includes(q)) return true;
+    const p=parseInvoiceNo(no);
+    return qn!=null && p && p.n===qn;
+  });
+  if(!matches.length){ say('فاکتوری با شمارهٔ «'+toFa(q)+'» پیدا نشد'); return; }
+  if(matches.length===1){ say(''); await editInvoice(matches[0].invoice_no); return; }
+  say('');
+  if(box){
+    box.hidden=false;
+    box.innerHTML='<h3 style="font-size:14px">'+toFa(matches.length)+' فاکتور پیدا شد</h3>'+matches.slice(0,30).map(inv=>`
+    <div class="hist-item">
+      <b><bdi dir="ltr" style="unicode-bidi:isolate;direction:ltr">${toFa(inv.invoice_no)}</bdi></b>
+      <span>${inv.jalali||''}</span>
+      <span>میز ${inv.table_no?toFa(inv.table_no):'—'}</span>
+      <span>${fmtPrice(invoicePayable(inv))} تومان</span>
+      <div class="actions">
+        <button type="button" onclick="openInvoice('${inv.invoice_no}')">مشاهده</button>
+        <button type="button" onclick="editInvoice('${inv.invoice_no}')">ویرایش</button>
+      </div>
+    </div>`).join('');
+  }
+}
 async function renderHistory(){
   const el=document.getElementById('invHist'); if(!el) return;
   const list=await listInvoices();
@@ -2922,7 +3008,9 @@ async function submitInvoice(){
       discountPercent:pct,
       discount:disc,
       total:Math.max(0, sub-disc),
-      status:'registered'
+      status:'registered',
+      takeaway:!!loadCart().takeaway,
+      note:loadCart().note.trim()
     };
     const itemBase=lines.map(l=>({
       item_id:l.id, name:l.name, qty:l.qty,
@@ -3034,6 +3122,8 @@ async function saveEditedInvoice(){
       discount:disc,
       total:Math.max(0, sub-disc),
       status:orig.status||'registered',
+      takeaway:!!loadCart().takeaway,
+      note:loadCart().note.trim(),
       editedAt:now.toISOString(),
       editedJalali:faDateTime(now),
       editCount:(Number(orig.editCount)||0)+1,
@@ -3439,6 +3529,9 @@ window.excelInvoice=excelInvoice;
 window.excelSaved=excelSaved;
 window.clearCartAsk=clearCartAsk;
 window.onTableInput=onTableInput;
+window.onTakeawayInput=onTakeawayInput;
+window.onNoteInput=onNoteInput;
+window.findInvoiceByNo=findInvoiceByNo;
 window.onInvSearch=onInvSearch;
 window.addFromSearch=addFromSearch;
 window.cartQty=cartQty;

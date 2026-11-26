@@ -2555,6 +2555,7 @@ async function openInvoice(no){
   if(invEditNo){
     if(!cancelEditInvoice({silent:false, close:true})) return;
   }
+  clearInvSearch();
   invViewNo=no||null;
   lastSaved=null;
   const panel=document.getElementById('invPanel');
@@ -2576,6 +2577,7 @@ function closeInvoice(){
   if(invEditNo){
     if(!cancelEditInvoice({silent:false, close:true})) return;
   }
+  clearInvSearch();
   resetPrintArea();
   if(typeof hidePdfFolderPrompt==='function') hidePdfFolderPrompt();
   if(typeof closeM==='function') try{ closeM(); }catch(e){}
@@ -2696,7 +2698,8 @@ async function settleInvoice(no){
       settleHistory:hist
     });
     await updateInvoiceRecord(upd, items);
-    if(lastSaved && lastSaved.invoice_no===no) lastSaved=upd;
+    const viewingThis=(invViewNo===no)||(lastSaved && lastSaved.invoice_no===no);
+    if(viewingThis) resetInvoiceForm();
     toast('فاکتور تسویه شد');
     if(document.getElementById('invPanel')?.classList.contains('open')) await renderInvoice();
   }catch(e){ console.error(e); toast('تسویه ناموفق بود'); }
@@ -2853,6 +2856,21 @@ function onInvSearch(el){
   invSearchQ=el?el.value:'';
   renderInvSearchResults();
 }
+function clearInvSearch(){
+  invSearchQ='';
+  const inp=document.getElementById('invSearch');
+  if(inp) inp.value='';
+  const box=document.getElementById('invSearchResults');
+  if(box){ box.innerHTML=''; box.hidden=true; }
+}
+function resetInvoiceForm(){
+  if(invEditNo){ clearEditCart(); invEditNo=null; }
+  invViewNo=null;
+  lastSaved=null;
+  saveCart(emptyCart(''));
+  clearInvSearch();
+  refreshQtyUI();
+}
 function renderInvSearchResults(){
   const box=document.getElementById('invSearchResults');
   if(!box) return;
@@ -2894,6 +2912,7 @@ function renderInvSearchResults(){
 function addFromSearch(id){
   const ref=itemRef(id);
   if(!ref) return;
+  clearInvSearch();
   cartAdd(id);
 }
 function restoreInvSearch(){
@@ -3152,6 +3171,7 @@ async function submitInvoice(){
     const no=inv.invoice_no;
     const items=itemBase.map(it=>Object.assign({}, it, {invoice_no:no}));
     saveCart(emptyCart(''));
+    clearInvSearch();
     refreshQtyUI();
     lastSaved=inv;
     invViewNo=no;
@@ -3178,6 +3198,7 @@ async function editInvoice(no){
   const inv=await getInvoice(no);
   if(!inv){ toast('فاکتور پیدا نشد'); return; }
   const items=await getInvoiceItems(no);
+  clearInvSearch();
   invViewNo=null;
   lastSaved=null;
   invEditNo=no;
@@ -3271,6 +3292,7 @@ async function saveEditedInvoice(){
     invEditNo=null;
     lastSaved=inv;
     invViewNo=no;
+    clearInvSearch();
     refreshQtyUI();
     await renderInvoice();
     if(document.getElementById('repPanel')?.classList.contains('open')) await renderReport();

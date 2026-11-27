@@ -2685,7 +2685,6 @@ async function settleInvoice(no){
     const si=settleInfo(inv, items);
     if(si && si.remain===0 && !si.hasNew){ toast('این فاکتور قبلاً تسویه شده است'); return; }
     const amount=si?si.remain:total;
-    if(!confirm('فاکتور '+toFa(no)+' تسویه شود؟\nمبلغ: '+fmtPrice(amount)+' تومان')) return;
     const now=new Date();
     const hist=Array.isArray(inv.settleHistory)?inv.settleHistory.slice():[];
     hist.push({at:now.toISOString(), jalali:faDateTime(now), amount, total});
@@ -2698,8 +2697,7 @@ async function settleInvoice(no){
       settleHistory:hist
     });
     await updateInvoiceRecord(upd, items);
-    const viewingThis=(invViewNo===no)||(lastSaved && lastSaved.invoice_no===no);
-    if(viewingThis) resetInvoiceForm();
+    if(invViewNo || lastSaved) resetInvoiceForm();
     toast('فاکتور تسویه شد');
     if(document.getElementById('invPanel')?.classList.contains('open')) await renderInvoice();
   }catch(e){ console.error(e); toast('تسویه ناموفق بود'); }

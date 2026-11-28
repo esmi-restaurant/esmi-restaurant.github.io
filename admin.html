@@ -3356,6 +3356,32 @@ async function printInvoice(mode){
     if(typeof toast==='function') toast('چاپ فاکتور ناموفق بود');
   }
 }
+document.addEventListener('keydown',e=>{
+  const panel=document.getElementById('invPanel');
+  if(!panel||!panel.classList.contains('open')) return;
+  const mod=e.ctrlKey||e.metaKey;
+  const t=e.target;
+  const id=t&&t.id;
+  if(mod&&!e.altKey&&!e.shiftKey&&(e.key==='p'||e.key==='P'||e.code==='KeyP')){
+    e.preventDefault();
+    printInvoice();
+    return;
+  }
+  if(mod&&!e.altKey&&!e.shiftKey&&e.key==='Enter'){
+    if(id==='invNoSearch') return;
+    if(invEditNo){ e.preventDefault(); saveEditedInvoice(); return; }
+    if(!invViewNo&&!lastSaved){ e.preventDefault(); submitInvoice(); return; }
+    return;
+  }
+  if(!mod&&!e.altKey&&!e.shiftKey&&e.key==='Enter'&&id==='invSearch'&&!e.isComposing&&e.keyCode!==229){
+    const box=document.getElementById('invSearchResults');
+    const btn=box&&!box.hidden&&box.querySelector('.inv-search-add');
+    if(btn&&String((document.getElementById('invSearch')||{}).value||'').trim()){
+      e.preventDefault();
+      btn.click();
+    }
+  }
+});
 function invoiceSheetRows(inv, items){
   const rows=[
     ['رستوران اسمی'],

@@ -3127,11 +3127,22 @@ function clearCartAsk(){
   const c=loadCart(); saveCart(emptyCart(c.table||''));
   refreshQtyUI(); renderInvoice();
 }
+let invWriteBusy=null;
+async function runInvWrite(fn){
+  if(invWriteBusy) return invWriteBusy;
+  invWriteBusy=(async()=>{
+    try{ return await fn(); }
+    finally{ invWriteBusy=null; }
+  })();
+  return invWriteBusy;
+}
 async function submitInvoice(){
   if(invEditNo) return saveEditedInvoice();
+  return runInvWrite(async()=>{
+  if(invViewNo||lastSaved) return true;
   const table=(document.getElementById('tableNo')?.value||loadCart().table||'').trim();
   const lines=cartLines();
-  if(!lines.length){toast('آیتمی برای ثبت انتخاب نشده است'); return;}
+  if(!lines.length){toast('آیتمی برای ثبت انتخاب نشده است'); return false;}
   const btn=document.getElementById('btnSaveInv');
   if(btn) btn.disabled=true;
   try{
@@ -3144,7 +3155,7 @@ async function submitInvoice(){
     if(String(discIn?.value||'').trim() && !discParsed.ok){
       toast('درصد تخفیف باید بین ۰ تا ۱۰۰ باشد');
       if(btn) btn.disabled=false;
-      return;
+      return false;
     }
     const pct=discParsed.ok?discParsed.value:0;
     const disc=discountAmountFromPercent(sub, pct);
@@ -3176,11 +3187,14 @@ async function submitInvoice(){
     await renderInvoice();
     toast('فاکتور ثبت شد');
     saveInvoicePdfBackup(inv, items);
+    return true;
   }catch(e){
     console.error(e);
     toast((e&&e.code==='invoice-number-collision')?'شماره فاکتور تکراری شد؛ دوباره تلاش کنید':'ثبت فاکتور ناموفق بود');
     if(btn) btn.disabled=false;
+    return false;
   }
+  });
 }
 async function editInvoice(no){
   if(!adminOn()){
@@ -3219,7 +3233,6 @@ async function editInvoice(no){
 function cancelEditInvoice(opts){
   opts=opts||{};
   if(!invEditNo) return true;
-  if(!opts.silent && !confirm('از ویرایش صرف‌نظر شود؟ تغییرات ذخیره نمی‌شود.')) return false;
   const no=invEditNo;
   clearEditCart();
   invEditNo=null;
@@ -3235,17 +3248,18 @@ function cancelEditInvoice(opts){
   return true;
 }
 async function saveEditedInvoice(){
+  return runInvWrite(async()=>{
   const no=invEditNo;
-  if(!no) return;
+  if(!no) return !!(invViewNo||lastSaved);
   const table=(document.getElementById('tableNo')?.value||loadCart().table||'').trim();
   const lines=cartLines();
-  if(!lines.length){toast('آیتمی برای ثبت انتخاب نشده است'); return;}
+  if(!lines.length){toast('آیتمی برای ثبت انتخاب نشده است'); return false;}
   const btn=document.getElementById('btnSaveEdit');
   if(btn) btn.disabled=true;
   try{
     await dbOpen();
     const orig=await getInvoice(no);
-    if(!orig){ toast('فاکتور پیدا نشد'); if(btn) btn.disabled=false; return; }
+    if(!orig){ toast('فاکتور پیدا نشد'); if(btn) btn.disabled=false; return false; }
     const prevItems=await getInvoiceItems(no);
     const discIn=document.getElementById('invDiscount');
     if(discIn) onDiscountInput(discIn);
@@ -3253,7 +3267,7 @@ async function saveEditedInvoice(){
     if(String(discIn?.value||'').trim() && !discParsed.ok){
       toast('درصد تخفیف باید بین ۰ تا ۱۰۰ باشد');
       if(btn) btn.disabled=false;
-      return;
+      return false;
     }
     const sub=lines.reduce((s,l)=>s+l.line,0);
     const pct=discParsed.ok?discParsed.value:0;
@@ -3296,11 +3310,14 @@ async function saveEditedInvoice(){
     if(document.getElementById('repPanel')?.classList.contains('open')) await renderReport();
     toast('تغییرات فاکتور ذخیره شد');
     saveInvoicePdfBackup(inv, items);
+    return true;
   }catch(e){
     console.error(e);
     toast('ذخیرهٔ ویرایش ناموفق بود');
     if(btn) btn.disabled=false;
+    return false;
   }
+  });
 }
 function scheduleInvoicePdfBackup(inv, items){
   try{
@@ -3311,6 +3328,15 @@ function scheduleInvoicePdfBackup(inv, items){
 }
 async function printInvoice(mode){
   mode=(mode==='extra')?'extra':'';
+  if(mode!=='extra'){
+    if(invEditNo){
+      const ok=await saveEditedInvoice();
+      if(!ok) return;
+    }else if(!invViewNo && !lastSaved){
+      const ok=await submitInvoice();
+      if(!ok) return;
+    }
+  }
   const {inv, items}=await currentView();
   if(!inv){ if(typeof toast==='function') toast('فاکتوری برای چاپ نیست'); return; }
   // Print first. Auto-PDF backup (folder prompt / CDN / File System Access)
